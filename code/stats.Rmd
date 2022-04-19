@@ -1,0 +1,653 @@
+---
+title: "Stats"
+author: "Kelsey Jensen"
+date: "3/7/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+library(tidyverse)
+library(ggpubr)
+library(lme4)
+library(lmerTest)
+library(emmeans)
+
+load("../data/priming_calcs.RData")
+load("../data/cumu_resp_long.RData")
+
+```
+
+SOC, DOC, WHC
+```{r, echo = FALSE}
+soil.char <- cumu_resp_long %>% filter(time_fct == "4") %>% filter(amendment == "ctrl")
+
+# SOC
+lm1 <- lmer(log(soc_mgC) ~ (plant*treatment)^2 + (1|ring), data = soil.char)
+summary(lm1)
+anova(lm1)
+
+plot(predict(lm1), residuals(lm1)) 
+qqnorm(residuals(lm1)); qqline(residuals(lm1))
+hist(residuals(lm1))
+
+summary(emmeans(lm1, pairwise ~ treatment|plant)$contrasts)
+summary(emmeans(lm1, pairwise ~ plant|treatment)$contrasts)
+
+summary(emmeans(lm1,  ~treatment|plant), type= "response")
+
+# DOC
+lm2 <- lmer(doc_ugC ~ (plant*treatment)^2 + (1|ring), data = soil.char)
+summary(lm2)
+anova(lm2)
+
+plot(predict(lm2), residuals(lm2)) 
+qqnorm(residuals(lm2)); qqline(residuals(lm2))
+hist(residuals(lm2))
+
+summary(emmeans(lm2, pairwise ~ treatment|plant)$contrasts)
+summary(emmeans(lm2, pairwise ~ plant|treatment)$contrasts)
+
+summary(emmeans(lm2,  ~treatment + plant), type= "response")
+summary(emmeans(lm2,  ~ plant), type= "response")
+
+# WHC
+lm3 <- lmer(whc ~ (plant*treatment)^2 + (1|ring), data = soil.char)
+summary(lm3)
+anova(lm3)
+
+plot(predict(lm3), residuals(lm3)) 
+qqnorm(residuals(lm3)); qqline(residuals(lm3))
+hist(residuals(lm3))
+
+summary(emmeans(lm3, pairwise ~ plant)$contrasts)
+summary(emmeans(lm3, pairwise ~ plant|treatment)$contrasts)
+summary(emmeans(lm3,  ~ plant), type= "response")
+
+# SOC 13C
+lm4 <- lmer(soc_isoC ~ (plant*treatment)^2 + (1|ring), data = soil.char)
+summary(lm4)
+anova(lm4)
+
+plot(predict(lm4), residuals(lm4)) 
+qqnorm(residuals(lm4)); qqline(residuals(lm4))
+hist(residuals(lm4))
+
+summary(emmeans(lm4, pairwise ~ treatment|plant)$contrasts)
+summary(emmeans(lm4, pairwise ~ plant|treatment)$contrasts)
+
+
+# DOC 13C
+lm5 <- lmer(doc_isoC ~ (plant*treatment)^2 + (1|ring), data = soil.char)
+summary(lm5)
+anova(lm5)
+
+plot(predict(lm5), residuals(lm5)) 
+qqnorm(residuals(lm5)); qqline(residuals(lm5))
+hist(residuals(lm5))
+
+summary(emmeans(lm5, pairwise ~ treatment|plant)$contrasts)
+summary(emmeans(lm5, pairwise ~ plant|treatment)$contrasts)
+```
+
+
+Assessing effect of glutamic C concentration on respiration
+```{r, echo = FALSE}
+
+lm.gluC <- lmer(sqrt(glu_soil.ugC) ~ (plant*treatment*time_fct)+(glu_ugC.gSoil) + 
+              (1|ring) + (1|ID), data = priming_calcs)
+
+plot(predict(lm.gluC), residuals(lm.gluC)) 
+qqnorm(residuals(lm.gluC)); qqline(residuals(lm.gluC))
+hist(residuals(lm.gluC))
+
+summary(lm.gluC)
+anova(lm.gluC)
+
+
+lm.gluC2 <- lmer(sqrt(glu_soil.ugC.hr) ~ (plant*treatment*time_fct)+(glu_ugC.gSoil) + 
+                (1|ring) + (1|ID), data = priming_calcs)
+
+plot(predict(lm.gluC2), residuals(lm.gluC2)) 
+qqnorm(residuals(lm.gluC2)); qqline(residuals(lm.gluC2))
+hist(residuals(lm.gluC2))
+
+summary(lm.gluC2)
+anova(lm.gluC2)
+
+# No effect of ugC_gSoil on rate or absolute resp
+
+```
+
+
+Respiration (rate)
+
+```{r}
+
+# Soil resp rate over time
+lm6 <- lmer(sqrt(soil.ugC.hr) ~ (plant * treatment * amendment * time_fct)^4 + 
+              (1|ring) + (1|ID) + (1|ID:amendment), data = cumu_resp_long) 
+summary(lm6)
+anova(lm6)
+
+plot(predict(lm6), residuals(lm6)) # ok
+qqnorm(residuals(lm6)); qqline(residuals(lm6)) # ok
+hist(residuals(lm6)) # normal dist with sqrt
+
+paircomp6 <- summary(emmeans(lm6, pairwise ~ treatment|plant|amendment|time_fct)$contrasts)
+paircomp6.1 <- summary(emmeans(lm6, pairwise ~ plant|amendment|treatment|time_fct)$contrasts)
+write.csv(paircomp6, "../output/paircomp_soilugChr.csv")
+
+emmeans6 <- summary(emmeans(lm6,  ~treatment+plant+amendment+time_fct), type= "response")
+write.csv(emmeans6, "../output/emmeans_soilugChr.csv")
+```
+
+
+Mineralization Rates 
+```{r, echo = FALSE}
+
+lm.min <- lmer(sqrt(mineralization.hr) ~ (plant * treatment * amendment * time_fct) + 
+              (1|ring) + (1|ID) + (1|ID:amendment), data = cumu_resp_long)
+summary(lm.min)
+anova(lm.min)
+
+plot(predict(lm.min), residuals(lm.min)) # ok
+qqnorm(residuals(lm.min)); qqline(residuals(lm.min)) # ok
+hist(residuals(lm.min)) # ok
+
+paircomp.min <- summary(emmeans(lm.min, pairwise ~ treatment|plant|amendment|time_fct)$contrasts)
+
+write.csv(paircomp.min, "../output/paircomp_min.csv")
+
+emmeans.min <- summary(emmeans(lm.min,  ~treatment+amendment+plant+time_fct), type= "response")
+
+
+```
+
+
+Cumulative Resp
+```{r, echo = FALSE}
+cumu.4 <- cumu_resp_long %>% filter(time_num == 4)
+
+# Cumulative soil resp 
+lm7.1 <- lmer(sqrt(cumu.soil.ugC) ~ (plant * treatment * amendment) + 
+              (1|ring) + (1|ID), data = cumu.4)
+
+plot(predict(lm7.1), residuals(lm7.1)) # good
+qqnorm(residuals(lm7.1)); qqline(residuals(lm7.1)) # good
+hist(residuals(lm7.1)) # best with sqrt
+
+summary(lm7.1)
+anova(lm7.1)
+
+paircomp7.1 <- summary(emmeans(lm7.1, pairwise ~ treatment|plant|amendment)$contrasts)
+
+write.csv(paircomp7.1, "../output/paircomp_cumu.soilugC.4.csv")
+
+emmeans7.1 <- summary(emmeans(lm7.1,  ~treatment + plant + amendment), type= "response")
+
+
+## 168
+cumu.168 <- cumu_resp_long %>% filter(time_fct == "168")
+
+# Cumulative soil resp 
+lm7.2 <- lmer(sqrt(cumu.soil.ugC) ~ (plant * treatment * amendment) + 
+              (1|ring) + (1|ID), data = cumu.168)
+
+plot(predict(lm7.2), residuals(lm7.2)) # good
+qqnorm(residuals(lm7.2)); qqline(residuals(lm7.2)) # good
+hist(residuals(lm7.2)) # best with sqrt
+
+summary(lm7.2)
+anova(lm7.2)
+
+paircomp7.2 <- summary(emmeans(lm7.2, pairwise ~ treatment|plant|amendment)$contrasts)
+
+write.csv(paircomp7.2, "../output/paircomp_cumu.soilugC.168.csv")
+
+# Cumu amendment resp (Super not normal residuals)
+hist(sqrt(cumu.168$cumu.amend.ugC))
+lm7.3 <- lmer(sqrt(cumu.amend.ugC) ~ (plant * treatment * amendment) + 
+              (1|ring) + (1|ID), data = cumu.168)
+
+plot(predict(lm7.3), residuals(lm7.3)) # good
+qqnorm(residuals(lm7.3)); qqline(residuals(lm7.3)) # good
+hist(residuals(lm7.3)) 
+
+```
+
+Control soil isoC
+```{r, echo = FALSE}
+
+ctrl_soil_isoC <- priming_calcs %>% filter( between(ctrl_soil.isoC, -30, 0))
+
+lm.isoC <- lmer(ctrl_soil.isoC ~ (plant * treatment *  time_fct) + 
+              (1|ring) + (1|ID), data = ctrl_soil_isoC)
+
+plot(predict(lm.isoC) , residuals(lm.isoC)) # good
+qqnorm(residuals(lm.isoC )); qqline(residuals(lm.isoC )) # good
+hist(residuals(lm.isoC )) # good
+
+summary(lm.isoC)
+anova(lm.isoC)
+
+paircomp.isoC <- summary(emmeans(lm.isoC, pairwise ~ treatment|plant|time_fct)$contrasts)
+
+write.csv(paircomp7.2, "../output/paircomp_cumu.soilugC.168.csv")
+
+```
+
+
+## Priming analysis
+Priming rate
+```{r, echo = FALSE}
+primedC <- cumu_resp_long %>% filter(amendment == "glu")
+
+lm8 <- lmer(sqrt(abs(primed.ugC.hr)) ~ (plant * treatment * time_fct) + 
+              (1|ring) + (1|ID) + (1|ID:amendment), data = primedC) 
+summary(lm8)
+anova(lm8)
+
+plot(predict(lm8), residuals(lm8)) # ok
+qqnorm(residuals(lm8)); qqline(residuals(lm8)) # ok
+hist(residuals(lm8)) # ok
+
+paircomp8 <- summary(emmeans(lm8, pairwise ~ treatment|plant|time_fct)$contrasts)
+
+#write.csv(paircomp8, "../output/paircomp_soilugChr.csv")
+
+emmeans8 <- summary(emmeans(lm8,  ~treatment+plant+time_fct), type= "response")
+# write.csv(emmeans8, "../output/emmeans_soilugChr.csv")
+
+primedC %>% ggplot(aes(x = time_num, y= primed.ugC.hr, color = treatment)) + geom_point()
+```
+
+Priming Effect
+```{r, echo = FALSE}
+priming.effect.data <- cumu_resp_long %>% filter(priming.effect != Inf) %>% 
+  filter(priming.effect <= 20) %>% filter(amendment =="glu") %>% filter(time_fct == "4")
+
+lm.prime <- lmer(sqrt(priming.effect) ~ (treatment*plant) + 
+              (1|ring), data = priming.effect.data)
+
+plot(predict(lm.prime), residuals(lm.prime)) # ok
+qqnorm(residuals(lm.prime)); qqline(residuals(lm.prime)) # ok
+hist(residuals(lm.prime)) # not great
+
+summary(lm.prime)
+anova(lm.prime)
+
+paircomp.p <- summary(emmeans(lm.prime, pairwise ~ treatment|plant)$contrasts)
+
+emmeans.p <- summary(emmeans(lm.prime,  ~treatment+plant), type= "response")
+```
+
+Net priming at 4 and 168 hours
+```{r, echo = FALSE}
+# 4 hours
+primed.4 <- cumu_resp_long %>% filter(time_fct == "4") %>% filter(amendment == "glu")
+
+lm9 <- lmer(sqrt(cumu.primed.ugC) ~ (plant*treatment) + 
+              (1|ring), data = primed.4) # sqrt and log transformations don't work great
+summary(lm9)
+anova(lm9)
+
+plot(predict(lm9), residuals(lm9)) # ok
+qqnorm(residuals(lm9)); qqline(residuals(lm9)) # ok
+hist(residuals(lm9)) # ok but narrow
+
+paircomp.9 <- summary(emmeans(lm9, pairwise ~ treatment|plant)$contrasts)
+emmeans.9 <- summary(emmeans(lm9,  ~plant), type= "response")
+
+# 168 Hours
+primed.168 <- cumu_resp_long %>% filter(time_fct == "168") %>% filter(amendment == "glu")
+
+lm10 <- lmer(sqrt(abs(cumu.primed.ugC)) ~ (plant*treatment) + 
+              (1|ring), data = primed.168) # sqrt and log transformations don't work great
+summary(lm10)
+anova(lm10)
+
+plot(predict(lm10), residuals(lm10))
+qqnorm(residuals(lm10)); qqline(residuals(lm10)) 
+hist(residuals(lm10)) # ok but narrow
+
+paircomp.10 <- summary(emmeans(lm10, pairwise ~ treatment|plant)$contrasts)
+emmeans.10 <- summary(emmeans(lm10,  ~plant), type= "response")
+
+```
+
+
+Relationship between respiration rate and DOC/SOC
+```{r, echo = FALSE}
+
+lm.vif <- lm(sqrt(soil.ugC.hr) ~ (plant + treatment + amendment + doc_ugC + soc_mgC), data = cumu_resp_long)
+car::vif(lm.vif)
+
+lm.C1 <- lmer(sqrt(soil.ugC.hr) ~  (plant + treatment + amendment + time_fct)^4 + (1|ring) + 
+                (1|ID) + (1|ID:amendment), data = cumu_resp_long)
+
+plot(predict(lm.C1), residuals(lm.C1)) 
+qqnorm(residuals(lm.C1)); qqline(residuals(lm.C1))
+hist(residuals(lm.C1))
+
+summary(lm.C1)
+anova(lm.C1)
+
+cumu_resp_long %>% ggplot(aes(x= plant, y= soil.ugC.hr, color = treatment)) +
+  geom_boxplot() + facet_grid(amendment ~ time_fct) + scale_y_continuous(trans = "sqrt")
+
+lm.C2 <- lmer(sqrt(soil.ugC.hr) ~ (soc_mgC + treatment + amendment + time_fct)^4 + 
+              (1|ring) + (1|ID) + (1|ID:amendment), data = cumu_resp_long)
+anova(lm.C2)
+
+cor.test(cumu_resp_long$soil.ugC.hr, cumu_resp_long$soc_mgC, method = "spearman")
+
+cumu_resp_long %>%  
+  ggplot(aes(x= soc_mgC, y= soil.ugC.hr, color = treatment)) +
+  geom_point() + geom_smooth(aes(group= interaction(treatment, amendment)), method = "lm")+
+  facet_grid(amendment~time_fct) + scale_y_continuous(trans = "sqrt") +
+  stat_cor(method = "spearman")
+
+
+lm.C3 <- lmer(sqrt(soil.ugC.hr) ~ (doc_ugC + treatment + amendment + time_fct)^4 + 
+                (1|ring) + (1|ID) + (1|ID:amendment), data = cumu_resp_long)
+anova(lm.C3)
+summary(lm.C3)
+
+cumu_resp_long %>%  
+  ggplot(aes(x= doc_ugC, y= soil.ugC.hr, color = treatment)) +
+  geom_point() + geom_smooth(aes(group= interaction(treatment, amendment)), method = "lm")+
+  facet_grid(amendment~time_fct) + scale_y_continuous(trans = "sqrt") +
+  stat_cor(method = "spearman")
+```
+
+
+Cumulative resp at 4 hours related to DOC/SOC
+```{r, echo = FALSE}
+
+resp.4 <- cumu_resp_long %>%  filter(time_fct == "4")
+
+lm.C4 <- lmer(sqrt(cumu.soil.ugC) ~ (plant + treatment + amendment)^3 + (1|ring) + (1|ID), data = resp.4)
+
+plot(predict(lm.C4), residuals(lm.C4)) 
+qqnorm(residuals(lm.C4)); qqline(residuals(lm.C4))
+hist(residuals(lm.C4))
+
+anova(lm.C4)
+
+cumu.C.4 %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x= soc_mgC, y= cumu.soil.ugC, color = treatment)) +
+  geom_point() + geom_smooth(aes(group= interaction(treatment, amendment)), method = "lm")+
+  facet_grid(~amendment) + scale_y_continuous(trans = "sqrt")
+
+
+lm.C5 <- lmer(sqrt(cumu.soil.ugC) ~ (soc_mgC + treatment + amendment)^3 + (1|ring) + (1|ID), data = resp.4)
+anova(lm.C5)
+
+resp.4 %>% 
+  ggplot(aes(x= soc_mgC, y= cumu.soil.ugC, color = treatment)) +
+  geom_point() + geom_smooth(aes(group= interaction(treatment, amendment)), method = lm)+
+  facet_grid(~amendment)+
+  scale_y_continuous(trans = "sqrt") +
+  stat_cor(method = "spearman")
+
+lm.C6 <- lmer(sqrt(cumu.soil.ugC) ~ (doc_ugC + treatment + amendment)^3 + (1|ring) + (1|ID), data = resp.4)
+anova(lm.C6)
+
+paircomp.C6 <- summary(emmeans(lm.C6, pairwise ~ treatment|amendment)$contrasts)
+
+resp_cumu %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x= whc, y= cumu.soil.ugC, color = treatment)) +
+  geom_point() + geom_smooth(aes(group= interaction(treatment)), method = lm)+
+  scale_y_continuous(trans = "sqrt") +
+  stat_cor(method = "spearman")
+
+```
+
+Relationship between cumulative respiration at 168 hours and DOC/SOC
+
+```{r, echo = FALSE}
+resp.168 <- cumu_resp_long %>%  filter(time_fct == "168")
+
+lm.C7 <- lmer(sqrt(cumu.soil.ugC) ~ (plant + treatment + amendment)^3 + (1|ring) + (1|ID), data = resp.168)
+
+plot(predict(lm.C7), residuals(lm.C7)) 
+qqnorm(residuals(lm.C7)); qqline(residuals(lm.C7))
+hist(residuals(lm.C7))
+
+anova(lm.C7)
+
+
+lm.C8 <- lmer(sqrt(cumu.soil.ugC) ~ (soc_mgC + treatment + amendment)^3 + (1|ring) + (1|ID), data = resp.168)
+anova(lm.C8)
+
+resp.168 %>% 
+  ggplot(aes(x= soc_mgC, y= cumu.soil.ugC, color = treatment)) +
+  geom_point() + geom_smooth(aes(group= interaction(treatment, amendment)), method = lm)+
+  facet_grid(~amendment) +
+  scale_y_continuous(trans = "sqrt") +
+  stat_cor(method = "spearman")
+
+resp.168 %>% 
+  ggplot(aes(x= soc_mgC, y= cumu.soil.ugC, color = treatment)) +
+  geom_point() + geom_smooth(aes(group= interaction(treatment, amendment)), method = lm)+
+  facet_grid(~amendment) +
+  scale_y_continuous(trans = "sqrt") +
+  stat_cor(method = "spearman")
+
+lm.C9 <- lmer(sqrt(cumu.soil.ugC) ~ (doc_ugC + treatment + amendment)^3 + (1|ring) + (1|ID), data = resp.168)
+anova(lm.C9)
+
+resp.168 %>% 
+  ggplot(aes(x= doc_ugC, y= cumu.soil.ugC, color = amendment)) +
+  geom_point() + geom_smooth(aes(group= interaction(treatment, amendment)), method = lm)+
+  facet_grid(~treatment) +
+  scale_y_continuous(trans = "sqrt") +
+  stat_cor(method = "spearman")
+
+```
+
+
+Relationship between priming rate and DOC/SOC
+Maybe don't include because rates are all right around zero? Or just do 4 hours
+```{r, echo = FALSE}
+priming <- cumu_resp_long %>% filter(amendment == "glu")
+
+lm.vif2 <- lm(sqrt(abs(primed.ugC.hr)) ~ (plant + treatment + doc_ugC + soc_mgC), 
+              data = priming)
+car::vif(lm.vif2)
+
+lm.P1 <- lmer(log(abs(primed.ugC.hr)) ~  (plant + treatment + time_fct)^3 + (1|ring) + 
+                (1|ID), data = priming)
+
+plot(predict(lm.P1), residuals(lm.P1)) 
+qqnorm(residuals(lm.P1)); qqline(residuals(lm.P1))
+hist(residuals(lm.P1))
+
+summary(lm.P1)
+anova(lm.P1)
+
+lm.P2 <- lmer(log(abs(primed.ugC.hr)) ~ (treatment + soc_mgC + time_fct)^3 + 
+              (1|ring) + (1|ID), data = priming)
+anova(lm.P2)
+
+cumu_resp_long %>%  
+  ggplot(aes(x= soc_mgC, y= primed.ugC.hr, color = treatment)) +
+  geom_point() + geom_smooth(aes(group= interaction(treatment)), method = "lm")+
+  facet_grid(~time_fct) + 
+  stat_cor(method = "spearman")
+
+
+lm.P3 <- lmer(log(abs(primed.ugC.hr)) ~ (treatment + doc_ugC)^2 + 
+                (1|ring) + (1|ID), data = priming)
+anova(lm.P3)
+```
+
+
+Cumulative priming at 4 hours related to DOC/SOC
+```{r, echo = FALSE}
+
+priming.4 <- cumu_resp_long %>% filter(amendment == "glu") %>% filter(time_fct == "4")
+
+lm.P4 <- lmer(cumu.primed.ugC ~ (treatment +  plant)^2 + (1|ring), data = priming.4)
+
+plot(predict(lm.P4), residuals(lm.P4)) 
+qqnorm(residuals(lm.P4)); qqline(residuals(lm.P4))
+hist(residuals(lm.P4))
+
+anova(lm.P4)
+
+
+lm.P5 <- lmer(cumu.primed.ugC ~ (treatment + soc_mgC)^2 + (1|ring), data = priming.4)
+anova(lm.P5)
+
+priming.4 %>% 
+  ggplot(aes(x= soc_mgC, y= cumu.primed.ugC, color = treatment)) +
+  geom_point() + geom_smooth(aes(group= interaction(treatment)), method = lm)+
+  scale_y_continuous(trans = "sqrt") +
+  stat_cor(method = "spearman")
+
+lm.P6 <- lmer(cumu.primed.ugC ~ (treatment + doc_ugC)^2 + (1|ring), data = priming.4)
+anova(lm.P6)
+
+priming.4 %>% 
+  ggplot(aes(x= doc_ugC, y= cumu.primed.ugC, color = treatment)) +
+  geom_point() + geom_smooth(aes(group= interaction(treatment)), method = lm)+
+  scale_y_continuous(trans = "sqrt") +
+  stat_cor(method = "spearman")
+```
+
+Cumulative priming at 168 hours related to DOC/SOC
+```{r, echo = FALSE}
+
+priming.168 <- cumu_resp_long %>% filter(amendment == "glu") %>% filter(time_fct == "168") %>% 
+  filter(soc_mgC <= 7)
+
+lm.P7 <- lmer(cumu.primed.ugC ~ (treatment +  plant )^2 + (1|ring), data = priming.168)
+
+plot(predict(lm.P7), residuals(lm.P7)) 
+qqnorm(residuals(lm.P7)); qqline(residuals(lm.P7))
+hist(residuals(lm.P7))
+
+anova(lm.P7)
+
+
+lm.P8 <- lmer(cumu.primed.ugC ~ (treatment + soc_mgC)^2 + (1|ring), data = priming.168)
+anova(lm.P8)
+
+priming.168 %>% 
+  ggplot(aes(x= soc_mgC, y= cumu.primed.ugC, color = treatment)) +
+  geom_point() + geom_smooth(aes(group= interaction(treatment)), method = lm)+
+  stat_cor(method = "spearman")
+
+lm.P9 <- lmer(cumu.primed.ugC ~ (treatment + doc_ugC)^2 + (1|ring), data = priming.168)
+anova(lm.P9)
+
+priming.168 %>% 
+  ggplot(aes(x= doc_ugC, y= cumu.primed.ugC, color = treatment)) +
+  geom_point() + geom_smooth(aes(group= interaction(treatment)), method = lm)+
+  scale_y_continuous(trans = "sqrt") +
+  stat_cor(method = "spearman")
+```
+
+
+Correlations
+```{r, doc}
+corr.data.ctrl <- cumu_resp_long %>% filter(time_fct == "168") %>% 
+  filter(amendment == "ctrl")
+
+
+lm1 <- lm(cumu.soil.ugC ~ doc_ugC, data = corr.data.ctrl)
+anova(lm1)
+
+stats::cor.test(corr.data.ctrl$cumu.soil.ugC, corr.data.ctrl$doc_ugC, method = "spearman")
+# r = 0.64, p = 7.4x10^-6
+
+ggplot(corr.data.ctrl, aes(x= doc_ugC, y = cumu.soil.ugC, fill = treatment)) + 
+  geom_point() + geom_smooth(method = "lm") + facet_grid(~plant)+
+  stat_cor(method="spearman", label.y = c(2000), 
+           size= 3, r.accuracy = 0.01, p.accuracy =0.01)
+
+
+corr.data.glu <- cumu_resp_long %>% filter(time_fct == "168") %>% 
+  filter(amendment == "glu")
+
+lm2 <- lm(cumu.soil.ugC ~ doc_ugC, data = corr.data.glu)
+anova(lm2)
+
+stats::cor.test(corr.data.glu$cumu.net.primed.ugC, corr.data.glu$doc_ugC, method = "spearman")
+# r = .77, p = 2.3x10^-7
+
+ggplot(corr.data.glu, aes(x= doc_ugC, y = cumu.net.primed.ugC, fill = treatment)) + 
+  geom_point() + geom_smooth(method = "lm") + facet_grid(~plant)+
+  stat_cor(method="spearman", label.y = c(600, 800), 
+           size= 3, r.accuracy = 0.01, p.accuracy =0.01)
+
+```
+
+
+
+```{r, echo = FALSE}
+#library(dabestr)
+
+est.data <- cumu_resp_long %>% filter(time_fct == "4") %>% filter(plant == "LATR") %>% 
+  filter(amendment == "ctrl")
+  
+
+unpaired_mean_diff <- dabest(est.data, treatment, mineralization.hr,
+                             idx = c("ambient", "elevated"),
+                             paired = FALSE) %>% 
+                      mean_diff()
+
+plot(unpaired_mean_diff)
+
+
+est.data.2 <- cumu_resp_long %>% filter(time_fct == "168") %>% filter(plant == "LATR") %>% 
+  filter(amendment == "glu")
+  
+
+unpaired_mean_diff.2 <- dabest(est.data.2, treatment, cumu.soil.ugC,
+                             idx = c("ambient", "elevated"),
+                             paired = FALSE) %>% 
+                      mean_diff()
+
+plot(unpaired_mean_diff.2)
+
+```
+
+Priming
+```{r, echo = FALSE}
+#library(dabestr)
+
+est.data.3 <- cumu_resp_long %>% filter(time_fct == "168") %>% filter(plant == "LATR") %>% 
+  filter(amendment == "glu")
+  
+
+unpaired_mean_diff.3 <- dabest(est.data.3, treatment, cumu.net.primed.ugC,
+                             idx = c("ambient", "elevated"),
+                             paired = FALSE) %>% 
+                      mean_diff()
+
+plot(unpaired_mean_diff.3)
+
+
+unpaired_mean_diff.4 <- dabest(est.data.3, treatment, cumu.pos.primed.ugC,
+                             idx = c("ambient", "elevated"),
+                             paired = FALSE) %>% 
+                      mean_diff()
+
+plot(unpaired_mean_diff.4)
+
+
+unpaired_mean_diff.5 <- dabest(est.data.3, treatment, cumu.neg.primed.ugC,
+                             idx = c("ambient", "elevated"),
+                             paired = FALSE) %>% 
+                      mean_diff()
+
+plot(unpaired_mean_diff.5)
+
+```

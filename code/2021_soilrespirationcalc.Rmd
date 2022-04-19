@@ -1,0 +1,515 @@
+---
+title: "National Soil Respiration"
+author: "Rachelle LaCroix"
+date: "4/28/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(readxl)
+```
+
+#Group 1 - low carbon soils
+```{r, include=FALSE}
+raw_data <- read_excel('national_soil_respiration_group1.xlsx', sheet = 'CO2 DATA FOR R', col_names = TRUE) 
+
+metadata <- read_excel('national_soil_respiration_group1.xlsx', sheet = 'SAMPLE METADATA', 
+                       col_names = TRUE, 
+                       range = "A1:K70") # change range according to sample number
+metadata$pedon_id <- as.character(metadata$pedon_id)
+# ============================================================================
+
+# transform to long data structure----
+
+long_data <- pivot_longer(raw_data, c(2:5), #edit columns to include additional dates
+             names_to = "Days",values_to = "CO2_mL") 
+
+long_data$Days <- as.numeric(as.character(long_data$Days))  
+long_data$CO2_mL[long_data$CO2_mL < 0]<-0
+
+# calculate mg of CO2 carbon using ideal gas equation----
+
+long_data_mg_co2_c <- long_data %>% 
+  mutate(mg_co2_c = (CO2_mL/(295.15*0.08205))*12.01) 
+
+
+# combine metadata with incubation data----
+
+long_data_joined <- inner_join(metadata, long_data_mg_co2_c, by = "jar_ID") %>%         # calculate mineralization (mg C/g soil) and mineralizability (mg C/g soil C)----
+  mutate(mineralization = mg_co2_c / soil_g,
+  mineralizability = ((mineralization / (soil_c/soil_g))*100)) %>%
+
+# calculate cumulative mineralization and mineralizability values----
+  group_by(jar_ID) %>% 
+  replace_na(list(mg_co2_c = 0)) %>%
+  mutate(cumu_mineralization = cumsum(mineralization),
+         cumu_mg_co2_c = cumsum(mg_co2_c),
+         cumu_mineralizability = cumsum(mineralizability)) 
+
+# calculate mean, sd and se of cumulative values by each sampling day
+mean_data <- long_data_joined %>% 
+  group_by(pedon_id,horizon,Days) %>%        
+  summarize(mean_cumu_mg_co2_c = mean(cumu_mg_co2_c),
+            mean_cumu_mineralization = mean(cumu_mineralization),
+            mean_cumu_mineralizability = mean(cumu_mineralizability),
+            sd_cumu_mg_co2_c = sd(cumu_mg_co2_c),
+            se_cumu_mg_co2_c = sd_cumu_mg_co2_c/sqrt(3),
+            sd_cumu_mineralization = sd(cumu_mineralization),
+            se_cumu_mineralization = sd_cumu_mineralization/sqrt(3),
+            sd_cumu_mineralizability = sd(cumu_mineralizability),
+            se_cumu_mineralizability = sd_cumu_mineralizability/sqrt(3))
+
+
+# join mean data with metadata----
+
+short_metadata <- metadata %>% # removes duplicate rows
+  distinct(unique_ID, .keep_all = TRUE)
+
+joined_mean_data <- left_join(mean_data, short_metadata, by = c('pedon_id','horizon'))%>%
+  select(-soil_g, -rep, -jar_ID) %>% 
+  relocate(pedon_id,horizon, soil_c, WHC, water_g, everything()) %>% 
+  rename(emission = mean_cumu_mg_co2_c,
+         min = mean_cumu_mineralization, 
+         min_c = mean_cumu_mineralizability,
+         se_emission = se_cumu_mg_co2_c,
+         se_min = se_cumu_mineralization,
+         se_min_c = se_cumu_mineralizability)%>%
+  unite("pedon_id_horizon", pedon_id:horizon, sep="")
+
+#write_csv(joined_mean_data, "20210428_natsoil_resp_group1")
+
+# calculate mean, sd and se of cumulative values over total length of incubation
+mean_totalsum_data <- long_data_joined %>% 
+  group_by(pedon_id,horizon) %>%        
+  summarize(mean_cumu_mg_co2_c = mean(cumu_mg_co2_c),
+            mean_cumu_mineralization = mean(cumu_mineralization),
+            mean_cumu_mineralizability = mean(cumu_mineralizability),
+            sd_cumu_mg_co2_c = sd(cumu_mg_co2_c),
+            se_cumu_mg_co2_c = sd_cumu_mg_co2_c/sqrt(3),
+            sd_cumu_mineralization = sd(cumu_mineralization),
+            se_cumu_mineralization = sd_cumu_mineralization/sqrt(3),
+            sd_cumu_mineralizability = sd(cumu_mineralizability),
+            se_cumu_mineralizability = sd_cumu_mineralizability/sqrt(3))
+
+joined_totalsum_data <- left_join(mean_totalsum_data, short_metadata, by = c('pedon_id','horizon'))%>%
+  select(-soil_g, -rep, -jar_ID) %>% 
+  relocate(pedon_id,horizon, soil_c, WHC, water_g, everything()) %>% 
+  rename(emission = mean_cumu_mg_co2_c,
+         min = mean_cumu_mineralization, 
+         min_c = mean_cumu_mineralizability,
+         se_emission = se_cumu_mg_co2_c,
+         se_min = se_cumu_mineralization,
+         se_min_c = se_cumu_mineralizability)%>%
+  unite("pedon_id_horizon", pedon_id:horizon, sep="")
+
+# plots----
+
+# plot theme----
+
+mytheme <- theme_bw() + theme(panel.grid = element_blank()) + 
+  theme(axis.text.x = element_text(size = 15)) +  
+  theme(axis.text.y = element_text(size = 15)) +
+  theme(axis.title.x = element_text(size = 17)) +
+  theme(axis.title.y = element_text(size = 17)) +
+  theme(legend.text = element_text(size = 17)) +
+  theme(legend.title = element_text(size = 17)) +
+  theme(strip.text.x = element_text(size = 17))
+
+# plot of cumulative mineralizability per sampling point
+min_c_plot <- ggplot(joined_mean_data, aes(Days, min_c)) + 
+  geom_point(aes(fill = pedon_id_horizon), size = 2, shape = 21, alpha=0.3) +
+  geom_errorbar(aes(Days, min_c,
+                    ymin = min_c - se_min_c, 
+                    ymax = min_c + se_min_c),
+                width = 0.1) + 
+  mytheme + labs(y = expression("Cumulative mineralizability (mg CO"[2]*"/g SOC)"),
+                 fill = "Soil") +
+  theme(legend.position = "right")+
+  facet_wrap(.~pedon_id_horizon)
+
+min_c_plot
+
+#ggsave("./eda/national_soil_min_c.svg", plot = min_c_plot)
+
+# plot of cumulative mineralizationy per sampling point
+min_plot <- ggplot(joined_mean_data, aes(Days, min)) + 
+  geom_point(aes(fill = pedon_id_horizon), size = 2, shape = 21, alpha=0.3) +
+  geom_errorbar(aes(Days, min,
+                    ymin = min - se_min, 
+                    ymax = min + se_min),
+                width = 0.1) + 
+  mytheme + labs(y = expression("Cumulative mineralization (mg CO"[2]*")"),
+                 fill = "pedon_id") +
+  theme(legend.position = "right")+
+  facet_wrap(.~pedon_id_horizon)
+
+min_plot
+
+#ggsave("./eda/national_soil_min.svg", plot = min_plot)
+
+
+# plot of total cumulative mineralization
+min_plot <- ggplot(joined_totalsum_data, aes(y=min,x=pedon_id_horizon)) + 
+  geom_bar(stat = 'identity') +
+  geom_errorbar(aes(ymin = min - se_min, 
+                    ymax = min + se_min),
+                width = 0.1) + 
+  mytheme + labs(y = expression("Cumulative mineralization (mg CO"[2]*"/g SOC)"),
+                 fill = "pedon_id") +
+  theme(legend.position = "right",
+        axis.text.x = element_text(angle = 45))
+
+min_plot
+
+# plot of total cumulative mineralizability
+min_plot <- ggplot(joined_totalsum_data, aes(y=min_c,x=pedon_id_horizon)) + 
+  geom_bar(stat = 'identity') +
+  geom_errorbar(aes(ymin = min_c - se_min_c, 
+                    ymax = min_c + se_min_c),
+                width = 0.1) + 
+  mytheme + labs(y = expression("Cumulative mineralizability (mg CO"[2]*"/g SOC)"),
+                 fill = "pedon_id") +
+  theme(legend.position = "right",
+        axis.text.x = element_text(angle = 45))
+
+min_plot
+```
+
+# Group 4a - high carbon soils (excluding arctic)
+```{r, echo=FALSE}
+# import data----
+
+raw_data <- read_excel('national_soil_respiration_group4a.xlsx', sheet = 'CO2 DATA FOR R', col_names = TRUE) 
+
+metadata <- read_excel('national_soil_respiration_group4a.xlsx', sheet = 'SAMPLE METADATA', 
+                       col_names = TRUE, 
+                       range = "A1:L55") # change range according to sample number
+metadata$pedon_id <- as.character(metadata$pedon_id)
+# ============================================================================
+
+# transform to long data structure----
+
+long_data <- pivot_longer(raw_data, c(2:10), #edit columns to include additional dates
+             names_to = "Days",values_to = "CO2_mL") 
+
+long_data$Days <- as.numeric(as.character(long_data$Days))  
+long_data$CO2_mL[long_data$CO2_mL < 0]<-0
+
+# calculate mg of CO2 carbon using ideal gas equation----
+
+long_data_mg_co2_c <- long_data %>% 
+  mutate(mg_co2_c = (CO2_mL/(295.15*0.08205))*12.01) 
+
+
+# combine metadata with incubation data----
+
+long_data_joined <- inner_join(metadata, long_data_mg_co2_c, by = "jar_ID") %>%         # calculate mineralization (mg C/g soil) and mineralizability (mg C/g soil C)----
+  mutate(mineralization = mg_co2_c / soil_g,
+  mineralizability = ((mineralization / (soil_c/soil_g))*100)) %>%
+
+# calculate cumulative mineralization and mineralizability values----
+  group_by(jar_ID) %>% 
+  replace_na(list(mg_co2_c = 0)) %>%
+  mutate(cumu_mineralization = cumsum(mineralization),
+         cumu_mg_co2_c = cumsum(mg_co2_c),
+         cumu_mineralizability = cumsum(mineralizability)) 
+
+# calculate mean, sd and se of cumulative values by each sampling day
+mean_data <- long_data_joined %>% 
+  group_by(pedon_id,horizon,Days) %>%        
+  summarize(mean_cumu_mg_co2_c = mean(cumu_mg_co2_c),
+            mean_cumu_mineralization = mean(cumu_mineralization),
+            mean_cumu_mineralizability = mean(cumu_mineralizability),
+            sd_cumu_mg_co2_c = sd(cumu_mg_co2_c),
+            se_cumu_mg_co2_c = sd_cumu_mg_co2_c/sqrt(3),
+            sd_cumu_mineralization = sd(cumu_mineralization),
+            se_cumu_mineralization = sd_cumu_mineralization/sqrt(3),
+            sd_cumu_mineralizability = sd(cumu_mineralizability),
+            se_cumu_mineralizability = sd_cumu_mineralizability/sqrt(3))
+
+
+# join mean data with metadata----
+
+short_metadata <- metadata %>% # removes duplicate rows
+  distinct(unique_ID, .keep_all = TRUE)
+
+joined_mean_data <- left_join(mean_data, short_metadata, by = c('pedon_id','horizon'))%>%
+  select(-soil_g, -rep, -jar_ID) %>% 
+  relocate(pedon_id,horizon, soil_c, WHC, water_g, everything()) %>% 
+  rename(emission = mean_cumu_mg_co2_c,
+         min = mean_cumu_mineralization, 
+         min_c = mean_cumu_mineralizability,
+         se_emission = se_cumu_mg_co2_c,
+         se_min = se_cumu_mineralization,
+         se_min_c = se_cumu_mineralizability)%>%
+  unite("pedon_id_horizon", pedon_id:horizon, sep="")
+
+#write_csv(joined_mean_data, "20210428_natsoil_resp_group1")
+
+# calculate mean, sd and se of cumulative values over total length of incubation
+mean_totalsum_data <- long_data_joined %>% 
+  group_by(pedon_id,horizon) %>%        
+  summarize(mean_cumu_mg_co2_c = mean(cumu_mg_co2_c),
+            mean_cumu_mineralization = mean(cumu_mineralization),
+            mean_cumu_mineralizability = mean(cumu_mineralizability),
+            sd_cumu_mg_co2_c = sd(cumu_mg_co2_c),
+            se_cumu_mg_co2_c = sd_cumu_mg_co2_c/sqrt(3),
+            sd_cumu_mineralization = sd(cumu_mineralization),
+            se_cumu_mineralization = sd_cumu_mineralization/sqrt(3),
+            sd_cumu_mineralizability = sd(cumu_mineralizability),
+            se_cumu_mineralizability = sd_cumu_mineralizability/sqrt(3))
+
+joined_totalsum_data <- left_join(mean_totalsum_data, short_metadata, by = c('pedon_id','horizon'))%>%
+  select(-soil_g, -rep, -jar_ID) %>% 
+  relocate(pedon_id,horizon, soil_c, WHC, water_g, everything()) %>% 
+  rename(emission = mean_cumu_mg_co2_c,
+         min = mean_cumu_mineralization, 
+         min_c = mean_cumu_mineralizability,
+         se_emission = se_cumu_mg_co2_c,
+         se_min = se_cumu_mineralization,
+         se_min_c = se_cumu_mineralizability)%>%
+  unite("pedon_id_horizon", pedon_id:horizon, sep="")
+
+# plots----
+
+# plot theme----
+
+mytheme <- theme_bw() + theme(panel.grid = element_blank()) + 
+  theme(axis.text.x = element_text(size = 15)) +  
+  theme(axis.text.y = element_text(size = 15)) +
+  theme(axis.title.x = element_text(size = 17)) +
+  theme(axis.title.y = element_text(size = 17)) +
+  theme(legend.text = element_text(size = 17)) +
+  theme(legend.title = element_text(size = 17)) +
+  theme(strip.text.x = element_text(size = 17))
+
+# plot of cumulative mineralizability per sampling point
+min_c_plot <- ggplot(joined_mean_data, aes(Days, min_c)) + 
+  geom_point(aes(fill = pedon_id_horizon), size = 4, shape = 21) +
+  geom_line(aes(group=pedon_id_horizon))+
+  geom_errorbar(aes(Days, min_c,
+                    ymin = min_c - se_min_c, 
+                    ymax = min_c + se_min_c),
+                width = 0.1) + 
+  mytheme + labs(y = expression("Cumulative mineralizability (mg CO"[2]*"/g SOC)"),
+                 fill = "Soil") +
+  theme(legend.position = "right")
+
+min_c_plot
+
+#ggsave("./eda/national_soil_min_c.svg", plot = min_c_plot)
+
+# plot of cumulative mineralization per sampling point
+min_plot <- ggplot(joined_mean_data, aes(Days, min)) + 
+  geom_point(aes(fill = pedon_id_horizon), size = 4, shape = 21) +
+  geom_line(aes(group=pedon_id_horizon))+
+  geom_errorbar(aes(Days, min,
+                    ymin = min - se_min, 
+                    ymax = min + se_min),
+                width = 0.1) + 
+  mytheme + labs(y = expression("Cumulative mineralization (mg CO"[2]*")"),
+                 fill = "pedon_id") +
+  theme(legend.position = "right")
+
+min_plot
+
+#ggsave("./eda/national_soil_min.svg", plot = min_plot)
+
+
+# plot of total cumulative mineralization
+min_plot <- ggplot(joined_totalsum_data, aes(y=min,x=pedon_id_horizon)) + 
+  geom_bar(stat = 'identity') +
+  geom_errorbar(aes(ymin = min - se_min, 
+                    ymax = min + se_min),
+                width = 0.1) + 
+  mytheme + labs(y = expression("Cumulative mineralization (mg CO"[2]*"/g SOC)"),
+                 fill = "pedon_id") +
+  theme(legend.position = "right",
+        axis.text.x = element_text(angle = 45))
+
+min_plot
+
+# plot of total cumulative mineralizability
+min_plot <- ggplot(joined_totalsum_data, aes(y=min_c,x=pedon_id_horizon)) + 
+  geom_bar(stat = 'identity') +
+  geom_errorbar(aes(ymin = min_c - se_min_c, 
+                    ymax = min_c + se_min_c),
+                width = 0.1) + 
+  mytheme + labs(y = expression("Cumulative mineralizability (mg CO"[2]*"/g SOC)"),
+                 fill = "pedon_id") +
+  theme(legend.position = "right",
+        axis.text.x = element_text(angle = 45))
+
+min_plot
+```
+
+# Group 4b - high carbon soils (Arctic only samples)
+```{r, echo=FALSE}
+# import data----
+
+raw_data <- read_excel('national_soil_respiration_group4b.xlsx', sheet = 'CO2 DATA FOR R', col_names = TRUE) 
+
+metadata <- read_excel('national_soil_respiration_group4b.xlsx', sheet = 'SAMPLE METADATA', 
+                       col_names = TRUE, 
+                       range = "A1:L19") # change range according to sample number
+metadata$pedon_id <- as.character(metadata$pedon_id)
+# ============================================================================
+
+# transform to long data structure----
+
+long_data <- pivot_longer(raw_data, c(2:7), #edit columns to include additional dates
+             names_to = "Days",values_to = "CO2_mL") 
+
+long_data$Days <- as.numeric(as.character(long_data$Days))  
+long_data$CO2_mL[long_data$CO2_mL < 0]<-0
+
+# calculate mg of CO2 carbon using ideal gas equation----
+
+long_data_mg_co2_c <- long_data %>% 
+  mutate(mg_co2_c = (CO2_mL/(295.15*0.08205))*12.01) 
+
+
+# combine metadata with incubation data----
+
+long_data_joined <- inner_join(metadata, long_data_mg_co2_c, by = "jar_ID") %>%         # calculate mineralization (mg C/g soil) and mineralizability (mg C/g soil C)----
+  mutate(mineralization = mg_co2_c / soil_g,
+  mineralizability = ((mineralization / (soil_c/soil_g))*100)) %>%
+
+# calculate cumulative mineralization and mineralizability values----
+  group_by(jar_ID) %>% 
+  replace_na(list(mg_co2_c = 0)) %>%
+  mutate(cumu_mineralization = cumsum(mineralization),
+         cumu_mg_co2_c = cumsum(mg_co2_c),
+         cumu_mineralizability = cumsum(mineralizability)) 
+
+# calculate mean, sd and se of cumulative values by each sampling day
+mean_data <- long_data_joined %>% 
+  group_by(pedon_id,horizon,Days) %>%        
+  summarize(mean_cumu_mg_co2_c = mean(cumu_mg_co2_c),
+            mean_cumu_mineralization = mean(cumu_mineralization),
+            mean_cumu_mineralizability = mean(cumu_mineralizability),
+            sd_cumu_mg_co2_c = sd(cumu_mg_co2_c),
+            se_cumu_mg_co2_c = sd_cumu_mg_co2_c/sqrt(3),
+            sd_cumu_mineralization = sd(cumu_mineralization),
+            se_cumu_mineralization = sd_cumu_mineralization/sqrt(3),
+            sd_cumu_mineralizability = sd(cumu_mineralizability),
+            se_cumu_mineralizability = sd_cumu_mineralizability/sqrt(3))
+
+
+# join mean data with metadata----
+
+short_metadata <- metadata %>% # removes duplicate rows
+  distinct(unique_ID, .keep_all = TRUE)
+
+joined_mean_data <- left_join(mean_data, short_metadata, by = c('pedon_id','horizon'))%>%
+  select(-soil_g, -rep, -jar_ID) %>% 
+  relocate(pedon_id,horizon, soil_c, WHC, water_g, everything()) %>% 
+  rename(emission = mean_cumu_mg_co2_c,
+         min = mean_cumu_mineralization, 
+         min_c = mean_cumu_mineralizability,
+         se_emission = se_cumu_mg_co2_c,
+         se_min = se_cumu_mineralization,
+         se_min_c = se_cumu_mineralizability)%>%
+  unite("pedon_id_horizon", pedon_id:horizon, sep="")
+
+#write_csv(joined_mean_data, "20210428_natsoil_resp_group1")
+
+# calculate mean, sd and se of cumulative values over total length of incubation
+mean_totalsum_data <- long_data_joined %>% 
+  group_by(pedon_id,horizon) %>%        
+  summarize(mean_cumu_mg_co2_c = mean(cumu_mg_co2_c),
+            mean_cumu_mineralization = mean(cumu_mineralization),
+            mean_cumu_mineralizability = mean(cumu_mineralizability),
+            sd_cumu_mg_co2_c = sd(cumu_mg_co2_c),
+            se_cumu_mg_co2_c = sd_cumu_mg_co2_c/sqrt(3),
+            sd_cumu_mineralization = sd(cumu_mineralization),
+            se_cumu_mineralization = sd_cumu_mineralization/sqrt(3),
+            sd_cumu_mineralizability = sd(cumu_mineralizability),
+            se_cumu_mineralizability = sd_cumu_mineralizability/sqrt(3))
+
+joined_totalsum_data <- left_join(mean_totalsum_data, short_metadata, by = c('pedon_id','horizon'))%>%
+  select(-soil_g, -rep, -jar_ID) %>% 
+  relocate(pedon_id,horizon, soil_c, WHC, water_g, everything()) %>% 
+  rename(emission = mean_cumu_mg_co2_c,
+         min = mean_cumu_mineralization, 
+         min_c = mean_cumu_mineralizability,
+         se_emission = se_cumu_mg_co2_c,
+         se_min = se_cumu_mineralization,
+         se_min_c = se_cumu_mineralizability)%>%
+  unite("pedon_id_horizon", pedon_id:horizon, sep="")
+
+# plots----
+
+# plot theme----
+
+mytheme <- theme_bw() + theme(panel.grid = element_blank()) + 
+  theme(axis.text.x = element_text(size = 15)) +  
+  theme(axis.text.y = element_text(size = 15)) +
+  theme(axis.title.x = element_text(size = 17)) +
+  theme(axis.title.y = element_text(size = 17)) +
+  theme(legend.text = element_text(size = 17)) +
+  theme(legend.title = element_text(size = 17)) +
+  theme(strip.text.x = element_text(size = 17))
+
+# plot of cumulative mineralizability per sampling point
+min_c_plot <- ggplot(joined_mean_data, aes(Days, min_c)) + 
+  geom_point(aes(fill = pedon_id_horizon), size = 4, shape = 21) +
+  geom_line(aes(group=pedon_id_horizon))+
+  geom_errorbar(aes(Days, min_c,
+                    ymin = min_c - se_min_c, 
+                    ymax = min_c + se_min_c),
+                width = 0.1) + 
+  mytheme + labs(y = expression("Cumulative mineralizability (mg CO"[2]*"/g SOC)"),
+                 fill = "Soil") +
+  theme(legend.position = "right")
+
+min_c_plot
+
+#ggsave("./eda/national_soil_min_c.svg", plot = min_c_plot)
+
+# plot of cumulative mineralizationy per sampling point
+min_plot <- ggplot(joined_mean_data, aes(Days, min)) + 
+  geom_point(aes(fill = pedon_id_horizon), size = 4, shape = 21) +
+  geom_line(aes(group=pedon_id_horizon))+
+  geom_errorbar(aes(Days, min,
+                    ymin = min - se_min, 
+                    ymax = min + se_min),
+                width = 0.1) + 
+  mytheme + labs(y = expression("Cumulative mineralization (mg CO"[2]*")"),
+                 fill = "pedon_id") +
+  theme(legend.position = "right")
+
+min_plot
+
+#ggsave("./eda/national_soil_min.svg", plot = min_plot)
+
+
+# plot of total cumulative mineralization
+min_plot <- ggplot(joined_totalsum_data, aes(y=min,x=pedon_id_horizon)) + 
+  geom_bar(stat = 'identity') +
+  geom_errorbar(aes(ymin = min - se_min, 
+                    ymax = min + se_min),
+                width = 0.1) + 
+  mytheme + labs(y = expression("Cumulative mineralization (mg CO"[2]*"/g SOC)"),
+                 fill = "pedon_id") +
+  theme(legend.position = "right",
+        axis.text.x = element_text(angle = 45))
+
+min_plot
+
+# plot of total cumulative mineralizability
+min_plot <- ggplot(joined_totalsum_data, aes(y=min_c,x=pedon_id_horizon)) + 
+  geom_bar(stat = 'identity') +
+  geom_errorbar(aes(ymin = min_c - se_min_c, 
+                    ymax = min_c + se_min_c),
+                width = 0.1) + 
+  mytheme + labs(y = expression("Cumulative mineralizability (mg CO"[2]*"/g SOC)"),
+                 fill = "pedon_id") +
+  theme(legend.position = "right",
+        axis.text.x = element_text(angle = 45))
+
+min_plot
+```

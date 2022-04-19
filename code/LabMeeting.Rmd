@@ -1,0 +1,798 @@
+---
+title: "Figures"
+author: "Kelsey Jensen"
+date: "2/21/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggpubr)
+
+load("../data/priming_calcs.RData")
+load("../data/cumu_resp.RData")
+load("../data/cumu_resp_long.RData")
+load("../data/lineplot_data.RData")
+load("../data/barplot_data.RData")
+load("../data/baseC_data.RData")
+load("../data/mean_baseC_data.RData")
+load("../data/mean_mineralization.RData")
+
+
+```
+
+
+```{r, echo = FALSE,warning = FALSE, message = FALSE}
+plot_theme <- theme(legend.text = element_text(size=12),
+                    legend.title = element_text(size=14),
+                    axis.line = element_line(colour = "black"),
+                    axis.text.y = element_text(size=12, face="bold"),
+                    axis.title.y=element_text(size=14, face="bold"),
+                    axis.text.x = element_text(size=14, hjust = .5, vjust=0), 
+                    axis.title.x=element_text(size=14, face="bold"),
+                    axis.ticks = element_blank()
+                    )
+
+plant.labs <- c("Interspace", "L. tridentata")
+names(plant.labs) <- c("INSP", "LATR")
+
+amend.labs <- c("Control", "Glutamic Acid")
+names(amend.labs) <- c("ctrl", "glu")
+
+tmt.labs <- c("Ambient", "Elevated")
+names(tmt.labs) <- c("ambient", "elevated")
+
+
+```
+
+Basic characteristics of each soil type
+
+```{r, echo= FALSE, warning = FALSE, message=FALSE}
+plot_soc <- priming_calcs %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x = treatment, y= soc_mgC )) + geom_boxplot() +
+  facet_grid(~plant, labeller = labeller(plant = plant.labs))+
+  xlab(element_blank())+
+  stat_compare_means(method = "t.test") +
+  theme_bw()+ plot_theme + 
+  theme(strip.text.x = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/soc_mgC.png",
+      plot= plot_soc, dpi = 300, width = 8, height = 5, units = "in")
+
+plot_socisoC <- priming_calcs %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x = treatment, y= soc_isoC )) + geom_boxplot() +
+  facet_grid(~plant, labeller = labeller(plant = plant.labs))+
+  stat_compare_means(method = "t.test") +
+  plot_theme + theme_bw()+
+  theme(strip.text.x = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/soc_isoC.png",
+      plot= plot_socisoC, dpi = 300, width = 8, height = 5, units = "in")
+
+plant_socisoC <- priming_calcs %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x = plant, y= soc_isoC )) + geom_boxplot() +
+  facet_grid(~treatment, labeller = labeller(treatment = tmt.labs))+
+  stat_compare_means(method = "t.test") +
+  plot_theme + theme_bw()+
+  theme(strip.text.x = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/soc_isoC_plant.png",
+      plot= plant_socisoC, dpi = 300, width = 8, height = 5, units = "in")
+
+plot_doc <- priming_calcs %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x = treatment, y= doc_ugC )) + geom_boxplot() +
+  facet_grid(~plant, labeller = labeller(plant = plant.labs))+
+  stat_compare_means(method = "t.test") +
+  plot_theme + theme_bw()+
+  theme(strip.text.x = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/doc_ugC.png",
+      plot= plot_doc, dpi = 300, width = 8, height = 5, units = "in")
+
+
+plot_docisoC <- priming_calcs %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x = treatment, y= doc_isoC )) + geom_boxplot() +
+  facet_grid(~plant, labeller = labeller(plant = plant.labs))+
+  stat_compare_means(method = "t.test") +
+  plot_theme + theme_bw()+
+  theme(strip.text.x = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/doc_isoC.png",
+      plot= plot_docisoC, dpi = 300, width = 8, height = 5, units = "in")
+
+plant_docisoC <- priming_calcs %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x = plant, y= doc_isoC )) + geom_boxplot() +
+  facet_grid(~treatment, labeller = labeller(treatment = tmt.labs))+
+  stat_compare_means(method = "t.test") +
+  plot_theme + theme_bw()+
+  theme(strip.text.x = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/doc_isoC_plant.png",
+      plot= plant_docisoC, dpi = 300, width = 8, height = 5, units = "in")
+
+plot_whc <- priming_calcs %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x = treatment, y= whc )) + geom_boxplot() +
+  facet_grid(~plant, labeller = labeller(plant = plant.labs))+
+  stat_compare_means(method = "t.test") +
+  plot_theme + theme_bw()+
+  theme(strip.text.x = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/whc.png",
+      plot= plot_whc, dpi = 300, width = 8, height = 5, units = "in")
+
+plot_ugCgSoil <- priming_calcs %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x = treatment, y= ugC_gSoil )) + geom_boxplot() +
+  facet_grid(~plant, labeller = labeller(plant = plant.labs))+
+  stat_compare_means(method = "t.test") +
+  plot_theme + theme_bw()+
+  theme(strip.text.x = element_text(size = 12, face = "bold.italic")) + 
+  ylab("ug C per g Soil from Amendment")
+
+ggsave(filename = "../figures/ugCgSoil.png",
+      plot= plot_ugCgSoil, dpi = 300, width = 8, height = 5, units = "in")
+
+plot_ugNgSoil <- priming_calcs %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x = treatment, y= ugN_gSoil )) + geom_boxplot() +
+  facet_grid(~plant, labeller = labeller(plant = plant.labs))+
+  stat_compare_means(method = "t.test") +
+  plot_theme + theme_bw()+
+  theme(strip.text.x = element_text(size = 12, face = "bold.italic")) + 
+  ylab("ug N per g Soil from Amendment")
+
+ggsave(filename = "../figures/ugNgSoil.png",
+      plot= plot_ugNgSoil, dpi = 300, width = 8, height = 5, units = "in")
+
+```
+
+
+Soil respired CO2-13C
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plot_ctrl_soil_isoC <- priming_calcs %>% filter( between(ctrl_soil.isoC, -30, 0)) %>% 
+  ggplot(aes(x= time_fct, y= ctrl_soil.isoC, fill = treatment)) + geom_boxplot() +
+  facet_grid(plant~., labeller = labeller(plant = plant.labs)) +
+  scale_y_continuous(limits = c(-35,5))+
+  scale_fill_manual(name= "Treatment",
+                      values = c("#66c2a5","#fc8d62"),
+                    labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  xlab("Hours")+ ylab(expression(bold(paste(SOC~delta^{13},'C (‰)'))))+
+  stat_compare_means(aes(label = ..p.signif..),
+                  method = "t.test", label.y = 3)+
+  plot_theme + theme_bw()+
+  theme(strip.text.y = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/ctrl_soil_isoC.png",
+      plot= plot_ctrl_soil_isoC, dpi = 300, width = 10, height = 5, units = "in")
+
+plant_ctrl_soil_isoC <- priming_calcs %>% filter( between(ctrl_soil.isoC, -30, 0)) %>% 
+  ggplot(aes(x= time_fct, y= ctrl_soil.isoC, fill = plant)) + geom_boxplot() +
+  facet_grid(treatment ~., labeller = labeller(treatment = tmt.labs)) +
+  scale_y_continuous(limits = c(-35,5))+
+  scale_fill_manual(name= "Cover Type",
+                      values = c("#6699FF","#CC9900"),
+                    labels = c("Interspace", "L. tridentata"))+
+  xlab("Hours")+ ylab(expression(bold(paste(SOC~delta^{13},'C (‰)'))))+
+  stat_compare_means(aes(label = ..p.signif..),
+                  method = "t.test", label.y = 3)+
+  plot_theme + theme_bw()+
+  theme(strip.text.y = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/ctrl_soil_isoC_plant.png",
+      plot= plant_ctrl_soil_isoC, dpi = 300, width = 10, height = 5, units = "in")
+
+
+
+```
+
+
+Respiration Rate Over Time
+
+```{r, echo = FALSE,warning = FALSE, message = FALSE}
+
+
+plot_respC_time <- mean_mineralization %>% filter(response == "resp.C") %>% 
+  ggplot(aes(x= time_num, y= mean, color= treatment)) + 
+  geom_point(position=position_dodge(2), size= 1) +
+  geom_errorbar(aes(ymin= mean - se, ymax= mean + se, 
+                    colour= treatment), 
+                width= 0, position=position_dodge(2)) +
+  geom_path(aes(group = treatment, color = treatment))+
+  facet_grid(plant~ amendment, labeller = labeller(plant = plant.labs, amendment = amend.labs)) +
+  ylab(expression(paste(Respiration~(mu~g~CO[2]-C)))) +
+  xlab("Hours")+
+  scale_color_manual(name= "Treatment",
+                    values = c("#66c2a5","#fc8d62"),
+                    labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  scale_x_continuous(limits= c(0, 175), breaks = c(0,24,48,72,96,120,144,168))+
+  theme_bw() + plot_theme + theme(axis.text.x = element_text(size=14)) +
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/respC_time.png",
+      plot= plot_respC_time, dpi = 300, width = 8, height = 4, units = "in")
+
+plant_respC_rate <- mean_mineralization %>% filter(response == "resp.hr") %>% 
+  ggplot(aes(x= time_num, y= mean, color= treatment)) + 
+  geom_point(position=position_dodge(2), size = 1) +
+  geom_errorbar(aes(ymin= mean - se, ymax= mean + se, 
+                    colour= treatment), 
+                position=position_dodge(2), 
+                width = 0) +
+  geom_path(aes(group = treatment, color = treatment))+
+  facet_grid(plant ~ amendment, 
+             labeller = labeller(plant = plant.labs, amendment = amend.labs)) +
+  ylab(expression(paste(Respiration~Rate~(mu~g~CO[2]-C~"*"~hr^-1)))) +
+  xlab("Hours") +
+  scale_color_manual(name= "Treatment",
+                    values = c("#66c2a5","#fc8d62"),
+                    labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  scale_x_continuous(limits= c(0, 175), breaks = c(0,24,48,72,96,120,144,168))+
+  theme_bw() + plot_theme + theme(axis.text.x = element_text(size=14)) +
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/respC_rate.png",
+      plot= plant_respC_rate, dpi = 300, width = 8, height = 4, units = "in")
+
+```
+
+
+Mineralization and Mineralization Rate Over Time
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plot_min <- mean_mineralization %>% filter(response == "mineralization.C") %>% 
+  ggplot(aes(x= time_num, y= mean, color= treatment)) + 
+  geom_point(position=position_dodge(2), size=1) +
+  geom_errorbar(aes(ymin= mean - se, ymax= mean + se, 
+                    colour= treatment), 
+                width=0, position=position_dodge(2)) +
+  geom_path(aes(group = treatment, color = treatment))+
+  facet_grid(plant ~ amendment, labeller = labeller(plant = plant.labs, amendment = amend.labs)) +
+  ylab(expression(paste(Mineralization~(mu~g~CO[2]-C~"*"~mg~Soil-C^-1)))) +
+  xlab("Hours") +
+  scale_color_manual(name= "Treatment",
+                    values = c("#66c2a5","#fc8d62"),
+                    labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  plot_theme + theme_bw() +
+  scale_x_continuous(limits= c(0, 175), breaks = c(0,24,48,72,96,120,144,168))+
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/mineralization.png",
+      plot= plot_min, dpi = 300, width = 8, height = 4, units = "in")
+
+plot_min_rate <- mean_mineralization %>% filter(response == "mineralization.hr") %>% 
+  ggplot(aes(x= time_num, y= mean, color= treatment)) + 
+  geom_point(position=position_dodge(4), size= 1) +
+  geom_errorbar(aes(ymin= mean - se, ymax= mean + se, 
+                    colour= treatment), 
+                width=0 , position=position_dodge(4)) +
+  geom_path(aes(group = treatment, color = treatment))+
+  facet_grid(plant~ amendment, labeller = labeller(plant = plant.labs, amendment = amend.labs)) +
+  ylab(expression(paste(Mineralization~(mu~g~CO[2]-C~"*"~mg~Soil-C^-1~"*"~hr^-1)))) +
+  xlab("Hours") +
+  scale_color_manual(name= "Treatment",
+                      values = c("#66c2a5","#fc8d62"),
+                    labels = c(expression(paste("Ambient")),expression("+CO"[2],)))+
+  plot_theme + theme_bw() +
+  scale_x_continuous(limits= c(0, 175), breaks = c(0,24,48,72,96,120,144,168))+
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/mineralization_rate.png",
+      plot= plot_min_rate, dpi = 300, width = 8, height = 4, units = "in")
+
+
+cumu_min <- cumu_resp_long %>% filter(time_fct == "168") %>% 
+  ggplot(aes(x= plant, y = cumu.mineralization.C, fill= treatment)) + geom_boxplot()+
+  facet_grid(~ amendment, labeller = labeller(amendment = amend.labs)) +
+  ylab(expression(atop("Cumulative Mineralization",(mu~g~CO[2]-C~"*"~mg~Soil-C^-1)))) +
+  scale_x_discrete(labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  xlab(element_blank())+
+  scale_fill_manual(name= "Treatment",
+                    values = c("#66c2a5","#fc8d62"),
+                    labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  theme_bw() + plot_theme +
+  theme(strip.text.x = element_text(size = 12, face = "bold"))
+  
+
+ggsave(filename = "../figures/cumu_mineralization.png",
+      plot= cumu_min, dpi = 300, width = 8, height = 4, units = "in")
+
+
+# Mineralization by cover type
+plant_min <- mean_mineralization %>% filter(response == "mineralization.C") %>% 
+  ggplot(aes(x= time_num, y= mean, color= plant)) + 
+  geom_point(position=position_dodge(2), size=1) +
+  geom_errorbar(aes(ymin= mean - se, ymax= mean + se, 
+                    colour= plant), 
+                width=0, position=position_dodge(2)) +
+  geom_path(aes(group = plant, color = plant))+
+  facet_grid(treatment ~ amendment, labeller = labeller(treament = tmt.labs, amendment = amend.labs)) +
+  ylab(expression(paste(Mineralization~(mu~g~CO[2]-C~"*"~mg~Soil-C^-1)))) +
+  xlab("Hours") +
+  scale_color_manual(name= "Cover Type",
+                      values = c("#6699FF","#CC9900"),
+                    labels = c("Interspace", "L. tridentata"))+
+  theme_bw() + plot_theme + 
+  scale_x_continuous(limits= c(0, 175), breaks = c(0,24,48,72,96,120,144,168))+
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold"))
+
+ggsave(filename = "../figures/mineralization_plant.png",
+      plot= plant_min, dpi = 300, width = 8, height = 4, units = "in")
+
+```
+
+Relative primed ug C
+
+```{r, echo = FALSE}
+
+rel_primed <- abs_cumu_resp_long %>% filter(time_fct == "168") %>% filter(amendment == "glu") %>% 
+  ggplot(aes(x = plant, y = cumu.rel.primed.ugC, fill= treatment)) + geom_boxplot() +
+  stat_compare_means(method = "t.test", label.y = 500) +
+  ylab(expression(atop("Relative Primed C",(mu~g~Primed~C~"*"~mg~SOC^-1)))) +
+  xlab(element_blank())+
+  scale_x_discrete(labels = c("Interspace", "L. tridentata"))+
+  scale_fill_manual(name= "Treatment",
+                    values = c("#66c2a5","#fc8d62"),
+                    labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  theme_bw() + plot_theme+
+  theme(strip.text.x = element_text(size = 12, face = "bold"))
+
+ggsave(filename = "../figures/rel_primed.png",
+      plot= rel_primed, dpi = 300, width = 6, height = 4, units = "in")
+
+
+rel_primed_plant <- abs_cumu_resp_long %>% filter(time_fct == "168") %>% filter(amendment == "glu") %>% 
+  ggplot(aes(x = treatment, y = cumu.rel.primed.ugC, fill= plant)) + geom_boxplot() +
+  stat_compare_means(method = "t.test", label.y = 500) +
+  ylab(expression(atop("Relative Primed C",(mu~g~Primed~C~"*"~mg~SOC^-1)))) +
+  scale_x_discrete(labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  xlab(element_blank())+
+  scale_fill_manual(name= "Cover Type",
+                      values = c("#6699FF","#CC9900"),
+                    labels = c("Interspace", "L. tridentata"))+
+  theme_bw() + plot_theme +
+  theme(strip.text.x = element_text(size = 12, face = "bold"))  
+
+ggsave(filename = "../figures/rel_primed_plant.png",
+      plot= rel_primed_plant, dpi = 300, width = 6, height = 4, units = "in")
+
+
+```
+
+
+
+Cumulative Soil Derived CO2-C over time (Control v Glutamic Acid)
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+cumu.soil.ugC <- lineplot_data %>% filter(Csource == "cumu.soil.ugC") %>% 
+  ggplot(aes(x= time_num, y= mean, color= treatment)) + 
+  geom_point(position=position_dodge(4), size= 1) +
+  geom_errorbar(aes(ymin= mean - se, ymax= mean + se, 
+                    colour= treatment), 
+                width=0, position=position_dodge(4)) +
+  geom_path(aes(group = treatment, color = treatment) )+
+  facet_grid(plant~ amendment, labeller = labeller(plant = plant.labs, amendment = amend.labs)) + 
+  ylab(expression(paste(Cumulative~Soil~Derived~CO[2]-C~(mu~g))))+ 
+  xlab("Hours")+
+  scale_color_manual(name = (expression(paste(CO[2]~Treatment))), 
+                   values = c("#66c2a5","#fc8d62"), 
+                   labels=c("Control",expression(paste(+CO[2]))))+
+  scale_x_continuous(limits= c(0, 175), breaks = c(0,24,48,72,96,120,144,168))+
+  theme_bw() + plot_theme + 
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/cumu.soil.ugC.png",
+      plot= cumu.soil.ugC, dpi = 300, width = 8, height = 4, units = "in")
+
+```
+
+Priming over time with negative priming
+
+```{r, echo = FALSE}
+neg_priming <- priming_calcs %>% filter(between(glu_primed.ugC, -200, 300)) %>% 
+  ggplot(aes(x= time_fct, y= glu_primed.ugC, fill = treatment)) + geom_boxplot() +
+  facet_grid(~plant,labeller = labeller(plant = plant.labs)) +
+  ylab(expression(paste(Primed~C~(mu~g~CO[2]-C)))) +
+  xlab("Hours") +
+  scale_fill_manual(name= "Treatment",
+                    values = c("#66c2a5","#fc8d62"),
+                    labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  theme_bw() + plot_theme +
+  theme(strip.text.x = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/neg_priming.png",
+      plot= neg_priming, dpi = 300, width = 10, height = 4, units = "in")
+```
+
+
+Respired C Source over time
+"Base" Respiration is the control (+H2O) respiration.
+Base + primed = total soil derived CO2
+Base + primed + amendment = total CO2 respired 
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 10, fig.width = 15}
+
+mean_baseC_data$Csource = factor(mean_baseC_data$Csource, 
+                                 c("cumu.amend.ugC", "cumu.primed.ugC", "cumu.base.ugC"))
+
+resp_Csource_all <- mean_baseC_data %>% 
+  ggplot(aes(y= mean, x= treatment, fill = Csource))+
+  geom_bar(position="stack", stat="identity") +
+  facet_grid(plant~time_fct,labeller = labeller(plant = plant.labs, amendment = amend.labs))+
+  ylab(expression(paste(Cumulative~CO[2]-C~(mu~g))))+ 
+  scale_x_discrete(labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  scale_fill_manual(name = expression(paste(Source~of~CO[2])),
+                    label = c("Amendment", "Primed", "Base"),
+                      values = c("#66c2a5","#fc8d62","#8da0cb"))+
+  scale_y_continuous(expand = c(0,0), limits = c(0,1750))+
+  xlab(element_blank())+
+   theme_bw()+ plot_theme +
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/resp_Csource_all.png",
+      plot= resp_Csource_all, dpi = 300, width = 13, height = 6, units = "in")
+
+resp_soilC <- mean_baseC_data %>% filter(!grepl("amend", Csource)) %>% 
+  ggplot(aes(x= treatment, y= mean, fill = Csource))+
+  geom_bar( stat="identity") +
+  facet_grid(plant ~ time_fct,
+             labeller = labeller(plant = plant.labs, amendment = amend.labs))+
+  ylab(expression(paste(Cumulative~Soil~Derived~CO[2]-C~(mu~g))))+ 
+  scale_x_discrete(labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  scale_fill_manual(name = expression(paste(Source~of~CO[2])),
+                    label = c("Primed","Base"),
+                      values = c("#fc8d62","#8da0cb"))+
+  scale_y_continuous(expand = c(0,0), limits = c(0,1400))+
+  xlab(element_blank())+
+  plot_theme + theme_bw()+
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic")) 
+
+ggsave(filename = "../figures/resp_soilC.png",
+      plot= resp_soilC, dpi = 300, width = 10, height = 6, units = "in")
+
+resp_amend <- mean_baseC_data %>% filter(Csource == "cumu.amend.ugC") %>% 
+  ggplot(aes(y= mean, x= treatment, fill = Csource))+
+  geom_bar( stat="identity" ) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                  width=.2, position=position_dodge(.9))+
+  facet_grid(plant~time_fct,labeller = labeller(plant = plant.labs, amendment = amend.labs))+
+  ylab(expression(paste(Cumulative~Amendment~CO[2]-C~(mu~g))))+ 
+  scale_x_discrete(labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  scale_fill_manual(values = c("#66c2a5"))+
+  scale_y_continuous(expand = c(0,0), limits = c(0,450))+
+  xlab(element_blank())+
+  plot_theme + theme_bw()+
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic")) +
+    theme(legend.position = "none")
+
+ggsave(filename = "../figures/resp_amend.png",
+      plot= resp_amend, dpi = 300, width = 8, height = 4, units = "in")
+
+resp_base <- mean_baseC_data %>% filter(Csource == "cumu.base.ugC") %>% 
+  ggplot(aes(y= mean, x= treatment, fill = Csource))+
+  geom_bar(stat="identity") + 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, fill = Csource),
+                  width=.2, position=position_dodge(.9))+
+  facet_grid(plant~time_fct,labeller = labeller(plant = plant.labs, amendment = amend.labs))+
+  ylab(expression(paste(Cumulative~Base~CO[2]-C~(mu~g))))+ 
+  scale_x_discrete(labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  scale_fill_manual(values = c("#fc8d62"))+
+  scale_y_continuous(expand = c(0,0), limits = c(0,1350))+
+  xlab(element_blank())+
+  plot_theme + theme_bw()+
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic")) +
+    theme(legend.position = "none")
+
+ggsave(filename = "../figures/resp_base.png",
+      plot= resp_base, dpi = 300, width = 8, height = 4, units = "in")
+
+resp_primed <- mean_baseC_data %>% filter(Csource == "cumu.primed.ugC") %>% 
+  ggplot(aes(y= mean, x= treatment, fill = Csource))+
+  geom_bar(stat="identity") +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, fill = Csource),
+                  width=.2, position=position_dodge(.9))+
+  facet_grid(plant~time_fct,labeller = labeller(plant = plant.labs, amendment = amend.labs))+
+  ylab(expression(paste(Cumulative~Primed~CO[2]-C~(mu~g))))+ 
+  scale_x_discrete(labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  scale_fill_manual(values = c("#8da0cb"))+
+  theme(legend.position = element_blank())+
+  scale_y_continuous(expand = c(0,0), limits = c(0,350))+
+  xlab(element_blank())+
+  plot_theme + theme_bw()+
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic")) +
+    theme(legend.position = "none")
+
+ggsave(filename = "../figures/resp_primed.png",
+      plot= resp_primed, dpi = 300, width = 8, height = 4, units = "in")
+
+```
+
+
+Bar plots cumulative to 168 hrs 
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 10, fig.width= 15}
+
+p1 <- mean_baseC_data %>% filter(time_fct == "168") %>% 
+  ggplot(aes(y= mean, x= treatment, fill = Csource))+
+  geom_bar(position=position_stack(reverse = TRUE), stat="identity") +
+  facet_grid(~plant,labeller = labeller(plant = plant.labs, amendment = amend.labs))+
+  ylab(expression(paste(Cumulative~Soil~Derived~CO[2]-C~(mu~g))))+ 
+  scale_x_discrete(labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  scale_fill_manual(name = expression(paste(Source~of~CO[2])),
+                    label = c("Amendment", "Base", "Primed"),
+                      values = c("#66c2a5","#fc8d62","#8da0cb"))+
+  scale_y_continuous(expand = c(0,0), limits = c(0,1750))+
+  xlab(element_blank())+
+  theme_bw() +  plot_theme + 
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic")) +
+  theme(legend.position = "bottom")
+
+ggsave(filename = "../figures/cumu_ugC_168.png",
+      plot= p1, dpi = 300, width = 6, height = 6, units = "in")
+
+p2 <- mean_baseC_data %>% filter(time_fct == "168") %>% 
+  filter(!grepl("amend", Csource)) %>% 
+  ggplot(aes(x= treatment, y= mean, fill = Csource))+
+  geom_bar(position=position_stack(reverse = TRUE), stat="identity") +
+  facet_grid(~plant,
+             labeller = labeller(plant = plant.labs, amendment = amend.labs))+
+  ylab(expression(paste(Cumulative~Soil~Derived~CO[2]-C~(mu~g))))+ 
+  scale_x_discrete(labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  scale_fill_manual(name = expression(paste(Source~of~CO[2])),
+                    label = c( "Base", "Primed"),
+                      values = c("#fc8d62","#8da0cb"))+
+  scale_y_continuous(expand = c(0,0), limits = c(0,1750))+
+  xlab(element_blank())+
+  theme_bw() +  plot_theme +
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic")) +
+  theme(legend.position = "bottom")
+
+ggsave(filename = "../figures/cumu_soil_168.png",
+      plot= p2, dpi = 300, width = 6, height = 6, units = "in")
+
+
+p3 <- mean_baseC_data %>% filter(time_fct == "168") %>% 
+  filter(Csource == "cumu.amend.ugC") %>% 
+  ggplot(aes(y= mean, x= treatment, fill = Csource))+
+  geom_bar( stat="identity") +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, fill = Csource),
+                  width=.2, position=position_dodge(.9))+
+  facet_grid(~plant,labeller = labeller(plant = plant.labs, amendment = amend.labs))+
+  ylab(expression(paste(Cumulative~Amendment~CO[2]-C~(mu~g))))+ 
+  scale_x_discrete(labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  scale_fill_manual(name = expression(paste(Source~of~CO[2])),
+                    label = c("Base"),
+                      values = c("#66c2a5"))+
+  theme(legend.position = "none")+
+  scale_y_continuous(expand = c(0,0), limits = c(0,1350))+
+  xlab(element_blank())+
+   theme_bw() +  plot_theme +
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic")) +
+  theme(legend.position = "bottom")
+
+ggsave(filename = "../figures/cumu_amend_168.png",
+      plot= p3, dpi = 300, width = 6, height = 6, units = "in")
+
+p4 <- mean_baseC_data %>% filter(time_fct == "168") %>% 
+  filter(Csource == "cumu.base.ugC") %>% 
+  ggplot(aes(y= mean, x= treatment, fill = Csource))+
+  geom_bar(stat="identity") + 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, fill = Csource),
+                  width=.2, position=position_dodge(.9))+
+  facet_grid(~plant,labeller = labeller(plant = plant.labs, amendment = amend.labs))+
+  ylab(expression(paste(Cumulative~Base~CO[2]-C~(mu~g))))+ 
+  scale_x_discrete(labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  scale_fill_manual(name = expression(paste(Source~of~CO[2])),
+                    label = c("Base"),
+                      values = c("#fc8d62"))+
+  theme(legend.position = "none")+
+  scale_y_continuous(expand = c(0,0), limits = c(0,1350))+
+  xlab(element_blank())+
+   theme_bw() +  plot_theme +
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic")) +
+  theme(legend.position = "bottom")
+
+ggsave(filename = "../figures/cumu_base_168.png",
+      plot= p4, dpi = 300, width = 6, height = 6, units = "in")
+
+p5 <- mean_baseC_data %>% filter(time_fct == "168") %>% 
+  filter(Csource == "cumu.primed.ugC") %>% 
+  ggplot(aes(y= mean, x= treatment, fill = Csource))+
+  geom_bar(stat="identity") +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, fill = Csource),
+                  width=.2, position=position_dodge(.9))+
+  facet_grid(~plant,labeller = labeller(plant = plant.labs, amendment = amend.labs))+
+  ylab(expression(paste(Cumulative~Primed~CO[2]-C~(mu~g))))+ 
+  scale_x_discrete(labels = c(expression(paste("Control")),expression("+CO"[2],)))+
+  scale_fill_manual(name = expression(paste(Source~of~CO[2])),
+                    label = c("Primed"),
+                      values = c("#8da0cb"))+
+  theme(legend.position = element_blank())+
+  scale_y_continuous(expand = c(0,0), limits = c(0,1350))+
+  theme(legend.position = "none")+
+  xlab(element_blank())+
+   theme_bw() +  plot_theme +
+  theme(strip.text.x = element_text(size = 12, face = "bold.italic")) +
+  theme(legend.position = "bottom")
+
+ggsave(filename = "../figures/cumu_primed_168.png",
+      plot= p5, dpi = 300, width = 6, height = 6, units = "in")
+
+p6 <- ggarrange(p1, p3, p4, p5, common.legend = TRUE, legend = "bottom")
+ggsave(filename = "../figures/all_168.png",
+      plot= p6, dpi = 300, width = 10, height = 8, units = "in")
+
+```
+
+
+DOC relationship with respired C
+Strong relationship between DOC and control respiration (except for LATR eCO2)
+Weaker relationship between DOC and glutatmic acid soil resp or primed C 
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+doc_ctrl <- resp_cumu %>% 
+  ggplot(aes(x = doc_ugC, y = ctrl_cumu.soil.ugC, group = treatment, color= treatment)) + 
+  geom_point() + 
+  geom_smooth(method= "lm", se= TRUE, fullrange= TRUE, alpha = 0.3)+ 
+  stat_cor(method="spearman", label.y = c(2700, 3000), 
+           size= 3, r.accuracy = 0.01, p.accuracy =0.01) + 
+  facet_grid(plant~time_fct, labeller= labeller(plant = plant.labs)) +
+  ylab(expression(paste(Control~Cumulative~Soil~Derived~CO[2]-C~(mu~g))))+
+  xlab(expression(paste(Dissolved~Organic~C~(mu~g~C~"*"~g~Soil^-1)))) +
+  scale_color_manual(name = expression(paste(CO[2]~Treatment)),
+                    label = c("Ambient", expression(paste(+CO[2]))),
+                      values = c("#66c2a5","#fc8d62"))+
+  plot_theme + theme_bw() + theme(legend.position = "bottom")+
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/corr_doc_ctrl.png",
+      plot= doc_ctrl, dpi = 300, width = 10, height = 6, units = "in")
+
+resp_cumu %>% 
+  ggplot(aes(x = doc_ugC, y = ctrl_cumu.soil.ugC, group = treatment, color= treatment)) + 
+  geom_point() + ggtitle("Control Soil") + 
+  geom_smooth(method= "lm", se= TRUE, fullrange= TRUE, alpha = 0.3)+ 
+  stat_cor(method="spearman", label.y = c(2700, 3000), 
+           size= 3, r.accuracy = 0.01, p.accuracy =0.01) + 
+  facet_grid(~time_fct) +
+  ylab(expression(paste(Cumulative~Soil~Derived~CO[2]-C~(mu~g))))+
+  xlab(expression(paste(Dissolved~Organic~C~(mu~g~C~"*"~g~Soil^-1)))) +
+  scale_color_manual(name = expression(paste(CO[2]~Treatment)),
+                    label = c("Ambient", expression(paste(+CO[2]))),
+                      values = c("#66c2a5","#fc8d62"))+
+  plot_theme + theme_bw()+ theme(legend.position = "bottom")+
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic"))
+
+
+doc_glu <- resp_cumu %>% 
+  ggplot(aes(x = doc_ugC, y = glu_cumu.soil.ugC, group = treatment, color= treatment)) + 
+  geom_point() +  
+  geom_smooth(method= "lm", se= TRUE, fullrange= TRUE, alpha = 0.3)+ 
+  stat_cor(method="spearman", label.y = c(3000, 3200), 
+           size= 3, r.accuracy = 0.01, p.accuracy =0.01) +
+  theme(legend.position = "bottom")+
+  facet_grid(plant~time_fct, labeller= labeller(plant = plant.labs)) +
+  ylab(expression(paste(Glutamic~Acid~Cumulative~Soil~Derived~CO[2]-C~(mu~g))))+
+  xlab(expression(paste(Dissolved~Organic~C~(mu~g~C~"*"~g~Soil^-1)))) +
+  scale_color_manual(name = expression(paste(CO[2]~Treatment)),
+                    label = c("Ambient", expression(paste(+CO[2]))),
+                      values = c("#66c2a5","#fc8d62"))+
+  plot_theme + theme_bw() + theme(legend.position = "bottom")+
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/corr_doc_glu.png",
+      plot= doc_glu, dpi = 300, width = 10, height = 6, units = "in")
+
+
+resp_cumu %>% 
+  ggplot(aes(x = doc_ugC, y = glu_cumu.soil.ugC, group = treatment, color= treatment)) + 
+  geom_point() + ggtitle("Glutamic Acid Soil") + 
+  geom_smooth(method= "lm", se= TRUE, fullrange= TRUE, alpha = 0.3)+ 
+  stat_cor(method="spearman", label.y = 2000) + 
+  facet_grid(~time_fct) +
+  ylab(expression(paste(Cumulative~Soil~Derived~CO[2]-C~(mu~g))))+
+  xlab(expression(paste(Dissolved~Organic~C~(mu~g~C~"*"~g~Soil^-1)))) +
+  scale_color_manual(name = expression(paste(CO[2]~Treatment)),
+                    label = c("Ambient", expression(paste(+CO[2]))),
+                      values = c("#66c2a5","#fc8d62"))+
+  plot_theme + theme_bw()+ theme(legend.position = "bottom")+
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic"))
+
+
+doc_primed <- resp_cumu %>% 
+  ggplot(aes(x = doc_ugC, y = glu_cumu.primed.ugC, group = treatment, color= treatment)) + 
+  geom_point() + 
+  geom_smooth(method= "lm", se= TRUE, fullrange= TRUE, alpha = 0.3)+ 
+  stat_cor(method="spearman", label.y = c(1400, 1600), 
+           size= 3, r.accuracy = 0.01, p.accuracy =0.01) +
+  facet_grid(plant~time_fct, labeller= labeller(plant = plant.labs)) +
+  ylab(expression(paste(Cumulative~Primed~CO[2]-C~(mu~g))))+
+  xlab(expression(paste(Dissolved~Organic~C~(mu~g~C~"*"~g~Soil^-1)))) +
+  scale_color_manual(name = expression(paste(CO[2]~Treatment)),
+                    label = c("Ambient", expression(paste(+CO[2]))),
+                     values = c("#66c2a5","#fc8d62"))+
+  plot_theme + theme_bw()+ theme(legend.position = "bottom")+
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic"))
+
+ggsave(filename = "../figures/corr_doc_primed.png",
+      plot= doc_primed, dpi = 300, width = 10, height = 6, units = "in")
+
+resp_cumu %>% filter(between(ctrl_soil.isoC, -30,0)) %>% 
+  ggplot(aes(x = doc_isoC, y = ctrl_soil.isoC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= TRUE, fullrange= TRUE, alpha = 0.3)+ 
+  stat_cor(method="spearman") + 
+  facet_grid(~time_fct) +
+  #ylab(expression(paste(Cumulative~Primed~CO[2]-C~(mu~g))))+
+  #xlab(expression(paste(Dissolved~Organic~C~(mu~g~C~"*"~g~Soil^-1)))) +
+  scale_color_manual(name = expression(paste(CO[2]~Treatment)),
+                    label = c("Ambient", expression(paste(+CO[2]))),
+                      values = c("#6699FF","#CC9900"))+
+  plot_theme + theme_bw()+ theme(legend.position = "bottom")+
+  theme(strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold.italic"))
+
+
+```
+
+
+Potentially useful other comparisons
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+resp_cumu %>% ggplot(aes(time_fct, y= ctrl_soil.ugC, fill = treatment)) + 
+  geom_boxplot() +
+  facet_grid(~plant) + stat_compare_means(aes(label = ..p.signif..),
+                  method = "anova", label.y = 500)
+
+resp_cumu %>% ggplot(aes(time_fct, y= ctrl_soil.ugC.hr, fill = treatment)) + 
+  geom_boxplot() +
+  facet_grid(~plant) + stat_compare_means(aes(label = ..p.signif..),
+                  method = "anova", label.y = 50)
+
+resp_cumu %>% ggplot(aes(time_fct, y= glu_soil.ugC, fill = treatment)) + 
+  geom_boxplot() +
+  facet_grid(~plant) + stat_compare_means(aes(label = ..p.signif..),
+                  method = "anova", label.y = 600)
+
+resp_cumu %>% ggplot(aes(time_fct, y= glu_soil.ugC.hr, fill = treatment)) + 
+  geom_boxplot() +
+  facet_grid(~plant) + stat_compare_means(aes(label = ..p.signif..),
+                  method = "anova", label.y = 50)
+
+resp_cumu %>% ggplot(aes(time_fct, y= glu_cumu.amend.ugC, fill = treatment)) + 
+  geom_boxplot() +
+  facet_grid(~plant) + stat_compare_means(aes(label = ..p.signif..),
+                  method = "anova", label.y = 500)
+
+resp_cumu %>% ggplot(aes(time_fct, y= glu_primed.ugC, fill = treatment)) + 
+  geom_boxplot() +
+  facet_grid(~plant) + stat_compare_means(aes(label = ..p.signif..),
+                  method = "anova", label.y = 200)
+
+
+
+```

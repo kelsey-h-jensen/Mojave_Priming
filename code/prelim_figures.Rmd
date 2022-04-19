@@ -1,0 +1,439 @@
+---
+title: "Respiration Figures"
+author: "Kelsey Jensen"
+date: "12/4/2021"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+library(tidyverse)
+
+```
+
+```{r load data, include = FALSE}
+load("../data/resp_long_cumu.RData")
+
+load("../data/resp_long_calcs_outrm.RData")
+
+load("../data/priming.RData")
+
+load("../data/cumu_priming.RData")
+
+load("../data/mean_cumu_priming_time.RData")
+
+load("../data/mean_cumu_primed.RData")
+
+load("../data/cumu_primed_long.RData")
+
+```
+
+Respiration, regardless of C source
+```{r ug_co2_c, echo= FALSE}
+resp_long_cumu %>%  
+  ggplot(aes(x= time_num, y= ug_co2_c, 
+             group = tmt_ID, color = treatment))+ 
+  geom_smooth()+
+  facet_wrap(~amendment)
+
+resp_long_cumu %>%  
+  ggplot(aes(x= time_num, y= ug_co2_c, 
+             group = tmt_ID, color = treatment))+ 
+  geom_smooth(aes(linetype = amendment), se= FALSE)
+```
+
+Respiration rate, regardless of amendment
+```{r respiration rate, echo = FALSE}
+resp_long_cumu %>% 
+  ggplot(aes(x= time_num, y= ug_CO2_c_hr, color = treatment))+ 
+  geom_smooth()+
+  facet_wrap(~amendment)
+
+resp_long_cumu %>% 
+  ggplot(aes(x= time_num, y= ug_CO2_c_hr, group = tmt_ID, color = treatment))+ 
+  geom_smooth(aes(linetype = amendment), se= FALSE)
+
+
+```
+
+Cumulative respriation, regardless of source
+The is a larger effect of adding glu to elevated soils than ambient soils, even though the amount of C respired from ambient soils is greater
+```{r cumulative resp, echo = FALSE}
+resp_long_cumu %>%  
+  ggplot(aes(x= time_num, y= cumu_ug_co2_c, 
+             fill = treatment, color = treatment))+ 
+  geom_smooth()+
+  facet_wrap(~amendment)
+
+resp_long_cumu %>%  
+  ggplot(aes(x= time_num, y= cumu_ug_co2_c, 
+             fill = tmt_ID, color = treatment))+ 
+  geom_smooth(aes(linetype = amendment), se= FALSE)
+
+resp_long_cumu %>% filter(time_fct == "168") %>% 
+  ggplot(aes(x= amendment, y= cumu_ug_co2_c, 
+             fill = treatment))+ 
+  geom_boxplot()
+
+resp_long_cumu %>% filter(time_fct == "168") %>% 
+  ggplot(aes(x= treatment, y= cumu_ug_co2_c, 
+             fill = amendment))+ 
+  geom_boxplot()
+
+
+```
+
+
+Effects on cumulative ugC evolved disapear when adjusted by SOC (mg SOC)
+``` {r mineralization, echo = FALSE}
+resp_long_cumu %>% 
+  ggplot(aes(x= time_num, y= cumu_mineralization, color = treatment))+ 
+  geom_smooth()+
+  facet_wrap(~amendment)
+
+resp_long_cumu %>% 
+  ggplot(aes(x= time_num, y= cumu_mineralization, group = tmt_ID, color = treatment))+ 
+  geom_smooth(aes(linetype = amendment), se= FALSE)
+
+resp_long_cumu %>% filter(time_fct == "168") %>% 
+  ggplot(aes(x= amendment, y= cumu_mineralization, 
+             fill = treatment))+ 
+  geom_boxplot()
+
+resp_long_cumu %>% filter(time_fct == "168") %>% 
+  ggplot(aes(x= treatment, y= cumu_mineralization, 
+             fill = amendment))+ 
+  geom_boxplot()
+
+resp_long_cumu %>% filter(time_fct == "168") %>% 
+  ggplot(aes(x= amendment, y= cumu_mineralizability, 
+             fill = treatment))+ 
+  geom_boxplot()
+
+
+```
+
+
+```{r priming, echo = FALSE}
+
+priming %>% ggplot(aes(x= time_num, y= primed_ugC, fill= treatment)) + 
+  geom_smooth(aes(color = treatment))
+
+priming %>% ggplot(aes(x= time_num, y= primed_ugC_hr, fill= treatment)) + 
+  geom_smooth(aes(color = treatment), se= FALSE)
+
+```
+Soils ultimately respire the same amount of the glucose (250 ug) but ambient soils lose more MAOM-C by the end relative to elevated soils
+What is the amount of C lost? Ambient soils lose 1500 ug, elevated lose 1000 mg
+The big difference in cumulative primed ugC is due to several elevated samples having negative priming at the end of the incubation
+That could still be a real effect though, elevated control samples have higher baseline incubation over time
+Could differences in control resp be important to explaining C loss?
+```{r priming, echo= FALSE}
+
+cumu_priming %>% ggplot(aes(x= time_fct, y= primed_ugC_hr, fill= treatment)) + geom_boxplot()
+
+cumu_priming %>% ggplot(aes(x= time_fct, y= cumu_MAOM_CO2_ugC, fill= treatment)) + geom_boxplot()
+
+cumu_priming %>% ggplot(aes(x= time_fct, y= cumu_glu_CO2_ugC, fill= treatment)) + geom_boxplot()
+
+cumu_priming %>% ggplot(aes(x= time_fct, y= cumu_primed_ugC, fill= treatment)) + geom_boxplot()
+# is this just factoring in that elevated samples have more negative priming data? 
+
+
+```
+
+```{r priming effect, echo = FALSE}
+priming %>% ggplot(aes(x= time_num, y = priming_effect, fill = treatment)) + 
+  geom_smooth(aes(color=treatment))
+
+```
+
+
+Mean priming over time
+
+```{r, echo= FALSE}
+load("../data/mean_cumu_priming_time.RData")
+
+p1 <- mean_data2 %>% ggplot(aes(x= time_fct, y = mean_cumu_MAOM_CO2_ugC, fill = treatment)) + 
+  geom_point(aes(color=treatment)) + geom_path(aes(group = treatment, color = treatment)) +
+  geom_errorbar(aes(ymin= mean_cumu_MAOM_CO2_ugC - se_cumu_MAOM_CO2_ugC, 
+                    ymax= mean_cumu_MAOM_CO2_ugC + se_cumu_MAOM_CO2_ugC, 
+                    colour= treatment), 
+                width=.1)
+
+ggsave(filename = "../figures/mean_cumu_MAOM_time.png", 
+       plot= p1, dpi = 300, width = 6, height = 4, units = "in")
+
+mean_data2 %>% ggplot(aes(x= time_fct, y = mean_cumu_glu_CO2_ugC)) + 
+  geom_point(aes(color=treatment)) + geom_path(aes(group = treatment, color = treatment)) +
+  geom_errorbar(aes(ymin= mean_cumu_glu_CO2_ugC - se_cumu_glu_CO2_ugC, 
+                    ymax= mean_cumu_glu_CO2_ugC + se_cumu_glu_CO2_ugC, 
+                    colour= treatment), 
+                width=.1)
+
+p2 <- mean_data2 %>% ggplot(aes(x= time_fct, y = mean_cumu_MAOM_CO2_ugC), fill = treatment) + 
+  geom_point(aes(color=treatment)) + geom_path(aes(group= treatment, color = treatment)) +
+  geom_errorbar(aes(ymin= mean_cumu_MAOM_CO2_ugC - se_cumu_MAOM_CO2_ugC, 
+                    ymax= mean_cumu_MAOM_CO2_ugC + se_cumu_MAOM_CO2_ugC, 
+                    colour= treatment), 
+                width=.1) +
+  ylab("Mean Soil Derived CO2-C (ug)")+ xlab("Hours")+
+  #scale_x_discrete(labels=c("Control", "+ Glutamic Acid"))+
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.background=element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        axis.text.y = element_text(size=12),
+        axis.title.y=element_text(size=14, face="bold"),
+        axis.text.x = element_text(size=12,face="bold", hjust = .5, vjust=0),
+        axis.title.x=element_text(size=14, face="bold"),
+        axis.ticks = element_blank())+
+  scale_color_manual(name = "CO2 Treatment", 
+                    values = c("black","#808080"), 
+                    labels=c("Ambient","Elevated"))
+p2
+
+ggsave(filename = "../figures/mean_cumu_primed_time.png", 
+       plot= p2, dpi = 300, width = 6, height = 4, units = "in")
+
+```
+
+Need to check if these are incorporating negative priming (still don't know how to interpret that)
+```{r primed, echo = FALSE}
+p3 <- cumu_priming %>% filter(time_num == "48") %>% 
+  ggplot(aes(x= treatment, y = cumu_primed_ugC)) + geom_boxplot() +
+  ggtitle("Cumulative to 48 hrs")
+
+ggsave(filename = "../figures/primed_48hrs.png", 
+       plot= p3, dpi = 300, width = 5, height = 5, units = "in")
+
+p4 <- cumu_priming %>% filter(time_num == "168") %>% 
+  ggplot(aes(x= treatment, y = cumu_primed_ugC)) + geom_boxplot() +
+  ggtitle("Cumulative to 168 hrs")
+  
+
+ggsave(filename = "../figures/primed_168hrs.png", 
+       plot= p4, dpi = 300, width = 5, height = 5, units = "in")
+
+```
+
+
+Fraction of glutamic peaks around 24 hours after which the fraction that is soil rebounds to about 100%
+Does priming occur while glutamic is being respired or does it happen after, on a delay
+Are microbes initially respiring DOC already in the soil? Or residual microbial C?
+```{r priming, echo = FALSE}
+cumu_priming %>% ggplot(aes(x= time_num, y = fraction_glu)) + 
+  geom_smooth(aes(color = treatment))
+
+cumu_priming %>% ggplot(aes(x= time_num, y = fraction_soil)) + 
+  geom_smooth(aes(color = treatment))
+
+cumu_priming %>% ggplot(aes(x= time_num, y = cumu_glu_CO2_ugC)) + 
+  geom_smooth(aes(color = treatment))
+
+cumu_priming %>% ggplot(aes(x= time_num, y = cumu_MAOM_CO2_ugC)) + 
+  geom_smooth(aes(color = treatment))
+```
+Ambient has greater priming becuase there is more C to prime. If we divide priming by the amount of MAOM (ug SOC), does elevated have more relative priming than ambient? Is control respiration primarily determined by how much SOC there is in the soil?
+```{r priming long, echo = FALSE}
+  
+# cumulative priming calculated with all negative values set to 0
+cumu_priming_long %>% ggplot(aes(x= time_num, y = cumu_MAOM_CO2_ugC)) + 
+  geom_smooth(aes(color = treatment, linetype = amendment))
+
+cumu_priming_long %>% ggplot(aes(x= time_num, y = cumu_glu_CO2_ugC)) + 
+  geom_smooth(aes(color = treatment))
+
+cumu_priming_long %>% ggplot(aes(x= time_num, y = cumu_primed_ugC)) + 
+  geom_smooth(aes(color = treatment))
+
+
+```
+
+
+```{r bar plot, echo = FALSE}
+bar_data <- read.csv("../data/barplot_priming.csv")
+
+p <- bar_data %>% filter(!grepl("primed", source_C)) %>% 
+  ggplot(aes(fill= source_C, y=mean, x= amendment))+
+  geom_bar(position="stack", stat="identity") +
+  #geom_text(size=4, position=position_stack(vjust=0.5)) +
+  facet_wrap(~treatment)
+p
+
+barplot <- p + ylab("CO2-C (ug)")+ xlab("Amendment")+
+  scale_x_discrete(labels=c("Control", "+Glutamic"))+
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.background=element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        axis.text.y = element_text(size=12),
+        axis.title.y=element_text(size=14, face="bold"),
+        axis.text.x = element_text(size=12,face="bold", hjust = .5, vjust=0),
+        axis.title.x=element_text(size=14, face="bold"),
+        axis.ticks = element_blank())+
+  #scale_y_continuous(expand = c(0,0), limits=c(0,1.7))+
+  scale_fill_manual(name = "Source of Carbon", 
+                    values = c("#D3D3D3","#808080"), 
+                    labels=c("Glutamic Acid","Soil (MAOM)")) +
+  ggtitle("168 Hours Cumulative Priming")
+
+barplot
+
+ggsave(filename = "../figures/bar_primed_168hrs_negrm.png", 
+       plot= barplot, dpi = 300, width = 6, height = 4, units = "in")
+
+```
+
+Add error bars to these figs
+Ratio of primed C to control C.... priming effect? Plot priming effect over time. 
+Need to think about what these time points mean. Are they irrelevant? 
+```{r barplot 48, echo = FALSE}
+bar_data2 <- read.csv("../data/barplot_priming48.csv")
+
+p <- bar_data2 %>% filter(!grepl("primed", source_C)) %>% 
+  ggplot(aes(fill= source_C, y=mean, x= amendment))+
+  geom_bar(position="stack", stat="identity") +
+  #geom_text(size=4, position=position_stack(vjust=0.5)) +
+  facet_wrap(~treatment)
+p
+
+barplot2 <- p + ylab("CO2-C (ug)")+ xlab("Amendment")+
+  scale_x_discrete(labels=c("Control", "+ Glutamic Acid"))+
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.background=element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        axis.text.y = element_text(size=12),
+        axis.title.y=element_text(size=14, face="bold"),
+        axis.text.x = element_text(size=12,face="bold", hjust = .5, vjust=0),
+        axis.title.x=element_text(size=14, face="bold"),
+        axis.ticks = element_blank())+
+  #scale_y_continuous(expand = c(0,0), limits=c(0,1.7))+
+  scale_fill_manual(name = "Source of Carbon", 
+                    values = c("#D3D3D3","#808080"), 
+                    labels=c("Glutamic Acid","Soil (MAOM)")) +
+  ggtitle("48 Hours Cumulative Priming")
+
+barplot2
+```
+
+Priming isotope data
+Need to remove those data points that don't make any sense
+```{r, echo = FALSE}
+
+priming %>% filter(between(calc_ctrl_soil_isoC, -35, -15)) %>% 
+  ggplot(aes(x= time_fct, y = calc_ctrl_soil_isoC, fill = treatment)) + 
+  geom_boxplot()
+
+priming %>% ggplot(aes(x= time_fct, y = glu_fraction_soil, fill = treatment)) + 
+  geom_boxplot()
+priming %>% ggplot(aes(x= time_fct, y = glu_fraction_glu, fill = treatment)) + 
+  geom_boxplot()
+
+priming %>% ggplot(aes(x= time_fct, y = glu_soil_ugC, fill = treatment)) + 
+  geom_boxplot()
+priming %>% ggplot(aes(x= time_fct, y = ctrl_soil_CO2_ugC, fill = treatment)) + 
+ geom_boxplot()
+
+priming %>% ggplot(aes(x= time_fct, y = ctrl_CO2_ugC_hr, fill = treatment)) + 
+  geom_boxplot()
+priming %>% ggplot(aes(x= time_fct, y =glu_soil_ugC_hr, fill = treatment)) + 
+  geom_boxplot()
+priming %>% ggplot(aes(x= time_fct, y =glu_CO2_ugC_hr, fill = treatment)) + 
+  geom_boxplot()
+
+```
+
+
+Priming data correlated with SOC and DOC
+```{r, echo = FALSE}
+priming %>% filter( between (primed_ugC, 0, 200)) %>% 
+  ggplot(aes(x = soc_mgC, y = primed_ugC, color = treatment)) + geom_point() +
+  geom_smooth(method=lm, se=FALSE, fullrange = TRUE)+
+  facet_wrap(.~time_fct, nrow= 2)
+
+priming %>% filter( between (primed_ugC, 0, 200)) %>% 
+  ggplot(aes(x = doc_ugC, y = primed_ugC, color = treatment)) + geom_point() +
+  geom_smooth(method=lm, se=FALSE, fullrange = TRUE)+
+  facet_wrap(.~time_fct, nrow =2)
+
+
+priming %>% filter( between (primed_ugC, 0, 200)) %>% 
+  ggplot(aes(x = doc_ugC, y = ctrl_soil_CO2_ugC, color = treatment)) + geom_point() +
+  geom_smooth(method=lm, se=FALSE, fullrange = TRUE)+
+  facet_wrap(.~time_fct, nrow =2)
+
+priming %>% filter( between (primed_ugC, 0, 200)) %>% 
+  ggplot(aes(x = soc_mgC, y = ctrl_CO2_ugC_hr)) + geom_point() +
+  geom_smooth(method=lm, se=FALSE, fullrange = TRUE)+
+  facet_wrap(.~time_fct, nrow =2)
+
+priming %>% filter( between (primed_ugC, 0, 200)) %>% 
+  ggplot(aes(x = doc_ugC, y = ctrl_CO2_ugC_hr)) + geom_point() +
+  geom_smooth(method=lm, se=FALSE, fullrange = TRUE)+
+  facet_wrap(.~time_fct, nrow =2)
+
+priming %>% filter( between (primed_ugC, 0, 200)) %>% 
+  ggplot(aes(x = doc_ugC, y = glu_soil_ugC_hr)) + geom_point() +
+  geom_smooth(method=lm, se=FALSE, fullrange = TRUE)+
+  facet_wrap(.~time_fct, nrow =2)
+
+priming %>% filter( between (primed_ugC, 0, 200)) %>% 
+  ggplot(aes(x = soc_mgC, y = glu_soil_ugC_hr)) + geom_point() +
+  geom_smooth(method=lm, se=FALSE, fullrange = TRUE)+
+  facet_wrap(.~time_fct, nrow =2)
+
+
+```
+
+
+Cumulative data with SOC and DOC
+```{r, echo = FALSE}
+cumu_priming <- read.csv(file = "../data/cumu_resp.csv", header = TRUE)
+
+cumu_priming %>% ggplot(aes(x = doc_ugC, y = cumu_ugC, group = treatment, color = treatment))+
+ geom_point() + geom_smooth(method=lm, se=FALSE, fullrange = TRUE)
+
+cumu_priming %>% ggplot(aes(x = soil_mgC, y = cumu_ugC, group = treatment, color = treatment))+
+ geom_point() + geom_smooth(method=lm, se=FALSE, fullrange = TRUE)
+
+```
+
+
+Stacked area chart 
+```{r, echo = FALSE}
+areaplot <- read.csv(file= "../data/areaplots_data.csv")
+areaplot$time_fct <- as.factor(areaplot$time_fct)
+
+areaplot %>%filter(treatment == "ambient") %>% 
+  ggplot(aes(x= time_fct, y= CO2_ugC)) + geom_area()
+
+p <- areaplot %>%  
+  ggplot(aes(fill= C_source, y= CO2_ugC, x= treatment))+
+  geom_bar(position="stack", stat="identity") +
+  facet_wrap(.~ time_fct, nrow = 1)
+p
+
+barplot <- p + ylab("CO2-C (ug)")+ xlab("Amendment")+
+  scale_x_discrete(labels=c("Control", "+Glutamic"))+
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.background=element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        axis.text.y = element_text(size=12),
+        axis.title.y=element_text(size=14, face="bold"),
+        axis.text.x = element_text(size=12,face="bold", hjust = .5, vjust=0),
+        axis.title.x=element_text(size=14, face="bold"),
+        axis.ticks = element_blank())+
+  #scale_y_continuous(expand = c(0,0), limits=c(0,1.7))+
+  scale_fill_manual(name = "Source of Carbon", 
+                    values = c("#D3D3D3","#808080"), 
+                    labels=c("Glutamic Acid","Soil")) +
+  ggtitle("168 Hours Cumulative Priming")
+
+```

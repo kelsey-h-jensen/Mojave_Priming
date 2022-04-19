@@ -1,0 +1,466 @@
+---
+title: "Figures"
+author: "Kelsey Jensen"
+date: "2/21/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggpubr)
+
+load("../data/priming_calcs.RData")
+load("../data/cumu_resp.RData")
+
+```
+
+Basic characteristics of each soil type
+```{r, echo = FALSE}
+
+priming_calcs %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x = plant, y= soc_mgC, fill = treatment)) + geom_boxplot()
+
+priming_calcs %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x = plant, y= soc_isoC, fill = treatment)) + geom_boxplot()
+
+priming_calcs %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x = plant, y= doc_ugC, fill = treatment)) + geom_boxplot()
+
+priming_calcs %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x = plant, y= doc_isoC, fill = treatment)) + geom_boxplot()
+
+priming_calcs %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x = plant, y= whc, fill = treatment)) + geom_boxplot()
+
+priming_calcs %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x = plant, y= ugC_gSoil, fill = treatment)) + geom_boxplot()
+
+priming_calcs %>% filter(time_fct == "4") %>% 
+  ggplot(aes(x = plant, y= ugN_gSoil, fill = treatment)) + geom_boxplot()
+
+
+```
+
+
+Relationship between SOC and DOC
+```{r, echo = FALSE}
+
+priming_calcs %>% filter(time_fct == "24") %>% filter(plant == "LATR") %>% 
+  ggplot(aes(x = soc_mgC, y = doc_ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("L. tridentata Control")
+
+priming_calcs %>% filter(time_fct == "24") %>% filter(plant == "INSP") %>% 
+  ggplot(aes(x = soc_mgC, y = doc_ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("Interspace Control")
+
+```
+
+C respired/mineralized over time. 
+Mineralization is almost identical between ctrl/glu for LATR, but higher for glu for INSP
+Need to go back and calculate means to make geom_path plots
+```{r, echo = FALSE}
+load(file = "../data/resp_long.RData")
+
+resp_long %>% filter( between(time_num, 0, 24)) %>% 
+  ggplot(aes(x= time_num, y= soil.ugC, color = amendment)) + geom_point()+
+  geom_smooth(method=loess, se= FALSE) + facet_grid(plant~treatment)
+
+resp_long %>% filter( between(time_num, 0, 24)) %>% 
+  ggplot(aes(x= time_num, y= soil.ugC.hr, color = amendment)) + geom_point()+
+  geom_smooth(method=loess, se= FALSE) + facet_grid(plant~treatment)
+
+resp_long %>% filter( between(time_num, 0, 24)) %>% 
+  ggplot(aes(x= time_num, y= mineralization.C, color = amendment)) + geom_point()+
+  geom_smooth(method=loess, se= FALSE) + facet_grid(plant~treatment)
+
+resp_long %>% filter( between(time_num, 0, 24)) %>% 
+  ggplot(aes(x= time_num, y= mineralization.hr, color = amendment)) + geom_point()+
+  geom_smooth(method=loess, se= FALSE) + facet_grid(plant~treatment)
+
+
+```
+
+Cumulative soil resp over time
+```{r, echo = FALSE}
+
+cumu_resp_long %>% 
+  ggplot(aes(x= time_num, y= cumu.soil.ugC, color = amendment)) + geom_point()+
+  geom_smooth(method=loess, se= FALSE) + facet_grid(plant~treatment)
+
+
+cumu_resp_long %>% filter(amendment == "glu") %>% filter( between(time_num, 0, 24)) %>% 
+  ggplot(aes(x= time_num, y= cumu.primed.ugC, color = treatment)) + geom_point()+
+  geom_smooth(method=loess, se= FALSE) + facet_grid(~plant)
+
+
+```
+
+Priming when LATR negative priming is changed to 0s
+```{r, echo= FALSE}
+
+abs_priming %>% filter(amendment == "glu") %>% 
+  ggplot(aes(x= time_num, y= cumu.primed.ugC, color = treatment)) + geom_point()+
+  geom_smooth(method=loess, se= FALSE) + facet_grid(~plant)
+
+
+abs_priming %>% filter( between(time_num, 0, 200)) %>% filter(amendment == "glu") %>% 
+  ggplot(aes(x= time_num, y= primed.ugC.hr, color = treatment)) + geom_point()+
+  geom_smooth(method=loess, se= FALSE) + facet_grid(~plant)
+
+abs_priming %>% filter( between(time_num, 0, 24)) %>% filter(amendment == "glu") %>% 
+  ggplot(aes(x= time_num, y= primed.ugC.hr, color = treatment)) + geom_point()+
+  geom_smooth(method=loess, se= FALSE) + facet_grid(~plant)
+
+```
+
+Correlation of SOC with respiration
+SOC is only explanatory for LATR eCO2 soils in the 24-48 hour range
+Surprisingly little correlation between SOC and any measure of respiration
+```{r, echo = FALSE}
+
+resp_cumu %>%  filter(plant == "LATR") %>%
+  ggplot(aes(x = soc_mgC, y = glu_soil.ugC.hr, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("L. tridentata Glutamic Soil C")
+
+
+resp_cumu %>%  filter(plant == "LATR") %>%
+  ggplot(aes(x = soc_mgC, y = glu_soil.ugC.hr, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("L. tridentata Glutamic Soil C")
+
+resp_cumu %>%  filter(plant == "LATR") %>%
+  ggplot(aes(x = soc_mgC, y = glu_primed.ugC.hr, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("L. tridentata Glutamic Primed C")
+
+
+resp_cumu %>%  filter(plant == "INSP") %>%
+  ggplot(aes(x = soc_mgC, y = ctrl_cumu.soil.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("Interspace Control")
+
+resp_cumu %>%  filter(plant == "INSP") %>%
+  ggplot(aes(x = soc_mgC, y = glu_cumu.soil.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("Interspace Glutamic Soil C")
+
+resp_cumu %>%  filter(plant == "INSP") %>%
+  ggplot(aes(x = soc_mgC, y = glu_cumu.primed.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("Interspace Glutamic Primed C")
+```
+
+DOC relationship with respired C
+Strong relationship between DOC and control respiration (except for LATR eCO2)
+Weaker relationship between DOC and glutatmic soil resp or primed C 
+```{r, echo = FALSE}
+
+resp_cumu %>%  filter(plant == "LATR") %>%
+  ggplot(aes(x = doc_ugC, y = ctrl_cumu.soil.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("L. tridentata Control")
+
+
+resp_cumu %>%  filter(plant == "LATR") %>%
+  ggplot(aes(x = doc_ugC, y = glu_cumu.soil.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("L. tridentata Glutamic Soil C")
+
+resp_cumu %>%  filter(plant == "LATR") %>%
+  ggplot(aes(x = doc_ugC, y = glu_cumu.primed.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("L. tridentata Glutamic Primed C")
+
+
+resp_cumu %>%  filter(plant == "INSP") %>%
+  ggplot(aes(x = doc_ugC, y = ctrl_cumu.soil.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("Interspace Control")
+
+resp_cumu %>%  filter(plant == "INSP") %>%
+  ggplot(aes(x = doc_ugC, y = glu_cumu.soil.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("Interspace Glutamic Soil C")
+
+resp_cumu %>%  filter(plant == "INSP") %>%
+  ggplot(aes(x = doc_ugC, y = glu_cumu.primed.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("Interspace Glutamic Primed C")
+
+
+```
+
+Relationship of ugC_gsoil over time
+```{r, echo = FALSE}
+
+resp_cumu %>%  filter(plant == "LATR") %>%
+  ggplot(aes(x = ugC_gSoil, y = ctrl_cumu.soil.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("L. tridentata Control")
+
+resp_cumu %>%  filter(plant == "LATR") %>%
+  ggplot(aes(x = ugC_gSoil, y = glu_cumu.soil.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("L. tridentata Glutamic Soil C")
+
+abs_resp_cumu %>%  filter(plant == "LATR") %>%
+  ggplot(aes(x = ugC_gSoil, y = glu_cumu.primed.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("L. tridentata Glutamic Primed C")
+
+resp_cumu %>%  filter(plant == "LATR") %>%
+  ggplot(aes(x = ugC_gSoil, y = glu_cumu.amend.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("L. tridentata Glutamic Amended C")
+
+resp_cumu %>%  filter(plant == "INSP") %>%
+  ggplot(aes(x = ugC_gSoil, y = ctrl_cumu.soil.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("Interspace Control")
+
+resp_cumu %>%  filter(plant == "INSP") %>%
+  ggplot(aes(x = ugC_gSoil, y = glu_cumu.soil.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("Interspace Glutamic Soil C")
+
+resp_cumu %>%  filter(plant == "INSP") %>%
+  ggplot(aes(x = ugC_gSoil, y = glu_cumu.primed.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("Interspace Glutamic Primed C")
+
+resp_cumu %>%  filter(plant == "INSP") %>%
+  ggplot(aes(x = ugC_gSoil, y = glu_cumu.amend.ugC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("Interspace Glutamic Amended C")
+
+
+```
+
+
+No relationship between soil isoC from control samples and doc or soc isoC
+```{r, echo = FALSE}
+resp_cumu %>%  filter(plant == "LATR") %>% filter( between(ctrl_soil.isoC, -30, 0)) %>% 
+  ggplot(aes(x = doc_isoC, y = ctrl_soil.isoC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("LATR control isoC vs DOC")
+
+resp_cumu %>%  filter(plant == "LATR") %>% filter( between(ctrl_soil.isoC, -30, 0)) %>% 
+  ggplot(aes(x = soc_isoC, y = ctrl_soil.isoC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("LATR control isoC vs SOC")
+
+resp_cumu %>%  filter(plant == "INSP") %>% filter( between(ctrl_soil.isoC, -30, 0)) %>% 
+  ggplot(aes(x = doc_isoC, y = ctrl_soil.isoC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("INSP control isoC vs DOC")
+
+resp_cumu %>%  filter(plant == "INSP") %>% filter( between(ctrl_soil.isoC, -30, 0)) %>% 
+  ggplot(aes(x = soc_isoC, y = ctrl_soil.isoC, group = treatment, color= treatment)) + 
+  geom_point() +
+  geom_smooth(method= "lm", se= FALSE, fullrange= TRUE)+ 
+  stat_cor(method="spearman") + facet_grid(~time_fct) + ggtitle("INSP control isoC vs SOC")
+
+```
+
+
+```{r, echo = FALSE}
+
+resp_cumu %>% filter(plant == "LATR") %>% 
+  ggplot(aes(x= time_fct, y = glu_soil.ugC.hr, color= treatment)) + 
+  geom_boxplot() 
+
+resp_cumu %>% filter(plant == "LATR") %>% 
+  ggplot(aes(x= time_fct, y = glu_amendment.ugC.hr, fill = treatment)) + 
+  geom_boxplot() 
+
+resp_cumu %>% filter(plant == "LATR") %>% 
+  ggplot(aes(x= time_fct, y =  glu_frac.soil, fill = treatment)) + 
+  geom_boxplot()
+
+resp_cumu %>% filter(plant == "LATR") %>% 
+  ggplot(aes(x= time_fct, y =  glu_frac.amendment, fill = treatment)) + 
+  geom_boxplot()
+
+```
+
+
+```{r, echo = FALSE}
+
+resp_cumu %>% filter(time_fct == "168") %>% 
+  ggplot(aes(x= plant, y= ctrl_soil.ugC, fill = treatment)) + 
+  geom_boxplot() 
+
+cumu_resp_long %>% filter(time_fct == "168") %>% 
+  ggplot(aes(x= amendment, y= cumu.soil.ugC, fill = treatment)) + 
+  geom_boxplot()+ facet_grid(~plant)
+
+resp_cumu %>% ggplot(aes(time_fct, y= ctrl_soil.ugC.hr, fill = treatment)) + 
+  geom_boxplot() +
+  facet_grid(~plant)
+
+resp_cumu %>% ggplot(aes(time_fct, y= glu_soil.ugC, fill = treatment)) + 
+  geom_boxplot() +
+  facet_grid(~plant)
+
+resp_cumu %>% ggplot(aes(time_fct, y= glu_soil.ugC.hr, fill = treatment)) + 
+  geom_boxplot() +
+  facet_grid(~plant)
+
+resp_cumu %>% ggplot(aes(time_fct, y= glu_cumu.amend.ugC, fill = treatment)) + 
+  geom_boxplot() +
+  facet_grid(~plant)
+
+resp_cumu %>% ggplot(aes(time_fct, y= glu_primed.ugC, fill = treatment)) + 
+  geom_boxplot() +
+  facet_grid(~plant)
+
+
+
+```
+
+
+
+Mineralization rate does not vary by treatment or really by plant. INSP might be slightly higher at the start
+```{r, echo = FALSE}
+
+resp_cumu %>% ggplot(aes(x= time_fct, y= ctrl_mineralization.hr, fill = treatment)) + 
+  geom_boxplot() + facet_grid(~plant)
+
+resp_cumu %>% ggplot(aes(x= time_fct, y= glu_mineralization.hr, fill = treatment)) + 
+  geom_boxplot() + facet_grid(~plant)
+
+
+```
+
+Primed ugC 
+
+Interpreting the interspace soils to have not been previously primed and so have more C to prime. Although, we'd expect ambient LATR to look more like INSP and instead it also shows negative priming...
+Greater effect of C under LATR than effect of eCO2?
+```{r, echo= FALSE}
+
+
+priming_calcs %>% 
+  ggplot(aes(x= time_fct, y= glu_primed.ugC, fill = treatment)) + geom_boxplot() +
+  facet_grid(~plant)
+
+abs_resp_cumu %>% 
+  ggplot(aes(x= time_fct, y= glu_cumu.primed.ugC, fill = treatment)) + geom_boxplot() +
+  facet_grid(~plant)
+
+```
+
+Plotting relative priming /mineralization
+rel primed C is ug primed carbon/ mg SOC
+```{r, echo = FALSE}
+
+abs_cumu_resp_long %>% filter(time_fct == "168") %>% filter(amendment == "glu") %>% 
+  ggplot(aes(x = treatment, y = cumu.rel.primed.ugC, fill= plant)) + geom_boxplot()+
+  stat_compare_means(method = "t.test")
+
+cumu_resp_long %>% 
+  ggplot(aes(x= amendment, y = cumu.mineralization.C, fill = treatment)) + geom_boxplot()+
+  facet_grid(plant~time_fct)
+
+cumu_resp_long %>% filter(time_fct == "168") %>% 
+  ggplot(aes(x= amendment, y = cumu.mineralization.C)) + geom_boxplot()+
+  facet_grid(~plant) +
+  stat_compare_means(method = "t.test")
+
+
+```
+
+
+13C of respired soil from control samples
+
+```{r, echo = FALSE}
+priming_calcs %>% filter( between(ctrl_soil.isoC, -30, 0)) %>% 
+  ggplot(aes(x= time_fct, y= ctrl_soil.isoC, fill = treatment)) + geom_boxplot() +
+  facet_grid(~plant)
+
+priming_calcs %>% filter( between(ctrl_soil.isoC, -30, 0)) %>% 
+  ggplot(aes(x= treatment, y= ctrl_soil.isoC)) + geom_boxplot() +
+  facet_grid(~plant)
+
+priming_calcs %>% filter( between(ctrl_soil.isoC, -30, 0)) %>% 
+  ggplot(aes(x= treatment, y= doc_isoC)) + geom_boxplot() +
+  facet_grid(~plant)
+
+priming_calcs %>% filter( between(ctrl_soil.isoC, -30, 0)) %>% 
+  ggplot(aes(x= treatment, y= soc_isoC)) + geom_boxplot() +
+  facet_grid(~plant)
+
+```
+
+
+Barplots
+```{r, echo = FALSE}
+
+load("../data/barplot_data.Rdata")
+
+barplot_data %>% filter(!grepl("primed", Csource)) %>% 
+  filter(plant == "LATR") %>% 
+  ggplot(aes(y= mean, x= amendment, fill= Csource))+
+  geom_bar(position="stack", stat="identity") +
+  facet_grid(treatment~time_fct) + ggtitle("L. tridentata Soils")
+
+
+barplot_data %>% filter(!grepl("primed", Csource)) %>% 
+  filter(plant == "INSP") %>% 
+  ggplot(aes(y= mean, x= amendment, fill= Csource))+
+  geom_bar(position="stack", stat="identity") +
+  facet_grid(treatment~time_fct) + ggtitle("Interspace Soils")
+
+
+barplot_data %>% filter(grepl("primed", Csource)) %>% 
+  ggplot(aes(y= mean, x= treatment, fill= Csource))+
+  geom_bar(position="stack", stat="identity") +
+  facet_grid(plant~time_fct)
+
+barplot_data %>% filter(grepl("amend", Csource)) %>% 
+  ggplot(aes(y= mean, x= treatment, fill= Csource))+
+  geom_bar(position="stack", stat="identity") +
+  facet_grid(plant~time_fct)
+
+
+
+```
+
+```{r, echo = FALSE}
+
+lineplot_data %>% filter(Csource == "cumu.soil.ugC") %>% 
+  ggplot(aes(x= time_num, y= mean, color= treatment)) + geom_point() +
+  facet_grid(amendment~plant) + geom_path(aes(group = treatment, color = treatment))+
+  geom_errorbar(aes(ymin= mean - se, 
+                    ymax= mean + se, 
+                    colour= treatment), 
+                width=.1)
+
+```
